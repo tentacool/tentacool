@@ -1,4 +1,4 @@
 tentacool
 =========
 
-tentacool super cool project ^_^
+tentacool super cool project ^_^.
