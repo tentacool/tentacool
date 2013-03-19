@@ -4,12 +4,12 @@
 
 #include <Poco/Net/StreamSocket.h>
 #include <map>
-#include <vector>
+#include <set>
 #include <string>
 
 typedef std::string Channel;
-typedef std::vector<Poco::Net::StreamSocket> StreamSocketVector;
-typedef std::map<Channel, StreamSocketVector> ChannelMap;
+typedef std::set<Poco::Net::StreamSocket> StreamSocketSet;
+typedef std::map<Channel, StreamSocketSet> ChannelMap;
 
 class MessageRouter {
      ChannelMap _channels;

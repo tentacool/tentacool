@@ -6,9 +6,15 @@ using namespace std;
 
 void MessageRouter::subscribe(Channel channel, const Poco::Net::StreamSocket& clientsocket)
 {
-    cout << "Subscribed " << clientsocket.peerAddress().host().toString() <<
-        " to channel " << channel << endl;
-    _channels[channel].push_back(clientsocket);
+    StreamSocketSet& channel_set = _channels[channel];
+
+    cout << "DEBUG " << _channels.size() << endl;
+
+    if (channel_set.find(clientsocket) == channel_set.end()) {
+        cout << "Subscribed " << clientsocket.peerAddress().host().toString() <<
+            " to channel " << channel << endl;
+        channel_set.insert(clientsocket);
+    }
 }
 
 void MessageRouter::route(Channel channel, string message)
@@ -22,7 +28,7 @@ void MessageRouter::route(Channel channel, string message)
 
     cout << "Channel " << channel << " has " << m_it->second.size() << " clients" << endl;
 
-    for (StreamSocketVector::iterator v_it = m_it->second.begin(); v_it != m_it->second.end(); ++v_it) {
+    for (StreamSocketSet::iterator v_it = m_it->second.begin(); v_it != m_it->second.end(); ++v_it) {
         cout << "Routing message " << message << " to " << v_it->peerAddress().host().toString() << endl;
         v_it->sendBytes(message.data(), message.size());
     }

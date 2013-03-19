@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include <stdio.h>
+#include <string.h>
 
 using namespace std;
 
@@ -16,6 +17,7 @@ void ConnectionManager::run()
     char channel[100];
 
     while (isOpen) {
+        memset(inBuffer, 0x0, 1000);
         if (sock.poll(timeOut,Poco::Net::Socket::SELECT_READ) == false) {
             cout << "TIMEOUT!" << endl << flush;
         } else {
@@ -42,7 +44,7 @@ void ConnectionManager::run()
                 //if (sock.sendBytes(inBuffer, nbytes) != nbytes) {
                 //    cerr << "Error sending bytes back" << endl << flush;
                 //}
-                _router.route(channel, (char*)inBuffer);
+                _router.route(channel, string((char*)inBuffer, nbytes));
             }
         }
     }
