@@ -2,25 +2,27 @@
 #ifndef __MESSAGE_ROUTER_HPP__
 #define __MESSAGE_ROUTER_HPP__
 
-#include <Poco/Net/StreamSocket.h>
+#include "Poco/Net/StreamSocket.h"
 #include <map>
-#include <set>
 #include <string>
+#include <set>
+#include <memory>
 
 typedef std::string Channel;
-typedef std::set<Poco::Net::StreamSocket> StreamSocketSet;
-typedef std::map<Channel, StreamSocketSet> ChannelMap;
+typedef Poco::Net::StreamSocket* StreamSocketPtr;
+typedef std::set<StreamSocketPtr> StreamSocketPtrSet;
+typedef std::map<Channel, StreamSocketPtrSet> ChannelMap;
 
 class MessageRouter {
-     ChannelMap _channels;
+    ChannelMap _channels;
 public:
     MessageRouter() {}
 
     // Register a client to a specific channel
-    void subscribe(Channel channel, const Poco::Net::StreamSocket& clientsocket);
+    void subscribe(Channel channel, StreamSocketPtr client);
 
-    // Route a message from a client to subscribed clients
-    void route(Channel channel, std::string message);
+    // Publish a message from a client to subscribed clients
+    void publish(Channel channel, StreamSocketPtr caller, std::string message);
 };
 
 #endif

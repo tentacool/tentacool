@@ -4,32 +4,35 @@
 
 using namespace std;
 
-void MessageRouter::subscribe(Channel channel, const Poco::Net::StreamSocket& clientsocket)
+void MessageRouter::subscribe(Channel channel, StreamSocketPtr client)
 {
-    StreamSocketSet& channel_set = _channels[channel];
+    cout << "Subscribe request on channel " << channel << " for " <<
+        client->peerAddress().host().toString() << endl;
 
-    cout << "DEBUG " << _channels.size() << endl;
+    StreamSocketPtrSet& channelset = _channels[channel];
 
-    if (channel_set.find(clientsocket) == channel_set.end()) {
-        cout << "Subscribed " << clientsocket.peerAddress().host().toString() <<
-            " to channel " << channel << endl;
-        channel_set.insert(clientsocket);
+    StreamSocketPtrSet::iterator itr = channelset.find(client);
+    if (itr == channelset.end()) {
+        channelset.insert(client);
     }
+    cout << "Channel has " << channelset.size() << " subscribers" << endl;
 }
 
-void MessageRouter::route(Channel channel, string message)
+void MessageRouter::publish(Channel channel, StreamSocketPtr caller, string message)
 {
-    ChannelMap::iterator m_it = _channels.find(channel);
+    cout << "Publishing message from " << caller->peerAddress().host().toString()
+        << " on " << channel << endl;
 
-    if (m_it == _channels.end()) {
-        cerr << "No subscribers in channel " << channel << endl;
+    StreamSocketPtrSet& channelset = _channels[channel];
+
+    if (channelset.size() == 0) {
+        cout << "Channel " << channel << " not present" << endl;
         return;
     }
 
-    cout << "Channel " << channel << " has " << m_it->second.size() << " clients" << endl;
-
-    for (StreamSocketSet::iterator v_it = m_it->second.begin(); v_it != m_it->second.end(); ++v_it) {
-        cout << "Routing message " << message << " to " << v_it->peerAddress().host().toString() << endl;
-        v_it->sendBytes(message.data(), message.size());
+    StreamSocketPtrSet::iterator itr;
+    for (itr = channelset.begin(); itr != channelset.end(); ++itr) {
+        if (*itr != caller)
+            (*itr)->sendBytes(message.c_str(), message.size());
     }
 }
