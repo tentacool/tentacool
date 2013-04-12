@@ -23,8 +23,8 @@
 ########################################################################
 cmake_minimum_required(VERSION 2.6)
 project(tentacool CXX)
-set(hcrt-dissector_VERSION_MAJOR 0)
-set(hcrt-dissector_VERSION_MINOR 0)
+set(tentacool_VERSION_MAJOR 0)
+set(tentacool_VERSION_MINOR 1)
 enable_testing()
 
 ########################################################################
@@ -46,6 +46,7 @@ set(TENTACOOL_SRC
   ${CMAKE_SOURCE_DIR}/hpfeedbroker.cpp
   ${CMAKE_SOURCE_DIR}/authenticator.cpp
   ${CMAKE_SOURCE_DIR}/message_router.cpp
+  ${CMAKE_SOURCE_DIR}/logger.cpp
 )
 
 add_executable(tentacool ${TENTACOOL_SRC})
