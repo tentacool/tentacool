@@ -17,8 +17,7 @@ class HpFeedClient : public Poco::Net::TCPServerConnection {
 
     std::string channel();
 public:
-    HpFeedClient(const Poco::Net::StreamSocket& s) :
-        Poco::Net::TCPServerConnection(s) {}
+    HpFeedClient(const Poco::Net::StreamSocket& s);
 
     void run();
 

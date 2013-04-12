@@ -10,6 +10,11 @@ using namespace std;
 
 MessageRouter HpFeedClient::_router;
 
+HpFeedClient::HpFeedClient(const Poco::Net::StreamSocket& s) :
+        Poco::Net::TCPServerConnection(s)
+{
+}
+
 string HpFeedClient::ip()
 {
     return socket().peerAddress().host().toString();
@@ -17,15 +22,16 @@ string HpFeedClient::ip()
 
 void HpFeedClient::run()
 {
-    Poco::Net::StreamSocket& sock = socket();
-    cout << "New connection from: " << ip() <<  endl << flush;
+    Poco::Net::StreamSocket& sock = this->socket();
+    cout << "New connection from: " << this->ip() <<  endl << flush;
     bool isOpen = true;
     Poco::Timespan timeOut(10, 0);
+    int nbytes;
 
     while (isOpen) {
         memset(_inBuffer, 0x0, 1000);
         if (!sock.poll(timeOut,Poco::Net::Socket::SELECT_READ) == false) {
-            int nbytes = -1;
+            nbytes = -1;
 
             try {
                 // Receiving bytes from client
@@ -45,12 +51,12 @@ void HpFeedClient::run()
                     _router.subscribe(this->channel(), &sock);
                 }
                 if (this->type() == "publish") {
-                    _router.publish(this->channel(), &sock, string((char*)_inBuffer, nbytes));
+                    _router.publish(this->channel(), &sock, _inBuffer, nbytes);
                 }
             }
         }
     }
-    cout << "Connection finished!" << endl << flush;
+    cout << "Client disconnected" << endl << flush;
 }
 
 string HpFeedClient::type()
