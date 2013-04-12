@@ -12,3 +12,6 @@ tentacool
 *.lai
 *.la
 *.a
+
+# Cmake build dir
+build/
