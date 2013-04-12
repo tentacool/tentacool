@@ -14,15 +14,17 @@ typedef std::set<StreamSocketPtr> StreamSocketPtrSet;
 typedef std::map<Channel, StreamSocketPtrSet> ChannelMap;
 
 class MessageRouter {
+    //! Container for all client, divided by channel
     ChannelMap _channels;
 public:
-    MessageRouter() {}
+    //! Constructor
+    MessageRouter();
 
-    // Register a client to a specific channel
+    //! Register a client to a specific channel
     void subscribe(Channel channel, StreamSocketPtr client);
 
-    // Publish a message from a client to subscribed clients
-    void publish(Channel channel, StreamSocketPtr caller, std::string message);
+    //! Publish a message from a client to subscribed clients
+    void publish(Channel channel, StreamSocketPtr caller, char* message, int len);
 };
 
 #endif

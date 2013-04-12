@@ -4,6 +4,10 @@
 
 using namespace std;
 
+MessageRouter::MessageRouter()
+{
+}
+
 void MessageRouter::subscribe(Channel channel, StreamSocketPtr client)
 {
     cout << "Subscribe request on channel " << channel << " for " <<
@@ -18,7 +22,7 @@ void MessageRouter::subscribe(Channel channel, StreamSocketPtr client)
     cout << "Channel has " << channelset.size() << " subscribers" << endl;
 }
 
-void MessageRouter::publish(Channel channel, StreamSocketPtr caller, string message)
+void MessageRouter::publish(Channel channel, StreamSocketPtr caller, char* message, int len)
 {
     cout << "Publishing message from " << caller->peerAddress().host().toString()
         << " on " << channel << endl;
@@ -33,6 +37,6 @@ void MessageRouter::publish(Channel channel, StreamSocketPtr caller, string mess
     StreamSocketPtrSet::iterator itr;
     for (itr = channelset.begin(); itr != channelset.end(); ++itr) {
         if (*itr != caller)
-            (*itr)->sendBytes(message.c_str(), message.size());
+            (*itr)->sendBytes(message, len);
     }
 }
