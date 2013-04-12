@@ -1,11 +1,13 @@
 
-#include <broker.hpp>
+#include <hpfeedbroker.hpp>
 
 #include <iostream>
 #include "Poco/Net/TCPServer.h"
 #include "Poco/Net/TCPServerParams.h"
 #include "Poco/Net/TCPServerConnectionFactory.h"
 #include <hpfeedclient.hpp>
+#include "Poco/Logger.h"
+#include <sstream>
 
 using namespace std;
 
@@ -16,7 +18,10 @@ HpFeedBroker::HpFeedBroker(int tcp_port, int threads, int queuelen, int idletime
 
 void HpFeedBroker::run()
 {
-    cout << "Starting server" << endl;
+    stringstream ss;
+    Poco::Logger& logger = Poco::Logger::get("Tentacool.HpFeedBroker");
+    ss << "Starting server on port " << _port;
+    logger.information(ss.str());
 
     // Create a server socket to listen.
     Poco::Net::ServerSocket svs(_port);
@@ -33,5 +38,7 @@ void HpFeedBroker::run()
         svs, pParams);
     myServer.start();
 
-    while(1);
+    while(1) {
+        ;
+    }
 }
