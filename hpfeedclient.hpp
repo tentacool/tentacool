@@ -5,6 +5,7 @@
 #include "Poco/Net/Socket.h"
 #include <message_router.hpp>
 #include "Poco/Net/TCPServerConnection.h"
+#include "Poco/Logger.h"
 
 class HpFeedClient : public Poco::Net::TCPServerConnection {
     // The message router
@@ -16,12 +17,15 @@ class HpFeedClient : public Poco::Net::TCPServerConnection {
     std::string type();
 
     std::string channel();
+
+    //! The Poco logger
+    Poco::Logger& _logger;
 public:
     HpFeedClient(const Poco::Net::StreamSocket& s);
 
     void run();
 
-    std::string ip();
+    inline std::string ip();
 };
 
 #endif

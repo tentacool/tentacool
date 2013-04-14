@@ -3,6 +3,7 @@
 #define __MESSAGE_ROUTER_HPP__
 
 #include "Poco/Net/StreamSocket.h"
+#include "Poco/Logger.h"
 #include <map>
 #include <string>
 #include <set>
@@ -16,6 +17,9 @@ typedef std::map<Channel, StreamSocketPtrSet> ChannelMap;
 class MessageRouter {
     //! Container for all client, divided by channel
     ChannelMap _channels;
+
+    //! The Poco Logger
+    Poco::Logger& _logger;
 public:
     //! Constructor
     MessageRouter();

@@ -18,15 +18,17 @@ int main(int argc, char** argv)
     // Get logging subsystem and set params
     Poco::AutoPtr<Poco::SimpleFileChannel> sfChannel(new Poco::SimpleFileChannel);
     sfChannel->setProperty("path", "logfile.log");
-    sfChannel->setProperty("rotation", "2 K");
+//    sfChannel->setProperty("rotation", "2 K");
 
     Poco::AutoPtr<Poco::PatternFormatter> pFormatter(new Poco::PatternFormatter);
-    pFormatter->setProperty("pattern", "%Y-%m-%d %H:%M:%S %s: %t");
+    pFormatter->setProperty("pattern", "[%Y-%m-%d %H:%M:%S] %s: %t");
 
     Poco::AutoPtr<Poco::FormattingChannel> pfChannel(new Poco::FormattingChannel(pFormatter, sfChannel));
     Poco::Logger::root().setChannel(pfChannel);
+    Poco::Logger::root().setLevel("debug");
 
     HpFeedBroker b;
     b.run();
+
     return 0;
 }

@@ -4,14 +4,15 @@
 
 using namespace std;
 
-MessageRouter::MessageRouter()
+MessageRouter::MessageRouter() :
+    _logger(Poco::Logger::get("Tentacool.MessageRouter"))
 {
 }
 
 void MessageRouter::subscribe(Channel channel, StreamSocketPtr client)
 {
-    cout << "Subscribe request on channel " << channel << " for " <<
-        client->peerAddress().host().toString() << endl;
+    poco_information_f2(_logger, "Subscribe request on channel %s for %s", channel,
+        client->peerAddress().host().toString());
 
     StreamSocketPtrSet& channelset = _channels[channel];
 
@@ -19,18 +20,18 @@ void MessageRouter::subscribe(Channel channel, StreamSocketPtr client)
     if (itr == channelset.end()) {
         channelset.insert(client);
     }
-    cout << "Channel has " << channelset.size() << " subscribers" << endl;
+    poco_debug_f1(_logger, "Channel has %d", channelset.size());
 }
 
 void MessageRouter::publish(Channel channel, StreamSocketPtr caller, char* message, int len)
 {
-    cout << "Publishing message from " << caller->peerAddress().host().toString()
-        << " on " << channel << endl;
+    poco_debug_f2(_logger, "Publishing message from %s on %s",
+        caller->peerAddress().host().toString(), channel);
 
     StreamSocketPtrSet& channelset = _channels[channel];
 
     if (channelset.size() == 0) {
-        cout << "Channel " << channel << " not present" << endl;
+        poco_debug_f1(_logger, "Channel %s not present", channel);
         return;
     }
 

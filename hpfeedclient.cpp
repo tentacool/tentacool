@@ -8,14 +8,15 @@
 
 using namespace std;
 
-MessageRouter HpFeedClient::_router;
+MessageRouter HpFeedClient::_router = MessageRouter();
 
 HpFeedClient::HpFeedClient(const Poco::Net::StreamSocket& s) :
-        Poco::Net::TCPServerConnection(s)
+        Poco::Net::TCPServerConnection(s),
+        _logger(Poco::Logger::get("Tentacool.HpFeedClient"))
 {
 }
 
-string HpFeedClient::ip()
+inline string HpFeedClient::ip()
 {
     return socket().peerAddress().host().toString();
 }
@@ -23,7 +24,7 @@ string HpFeedClient::ip()
 void HpFeedClient::run()
 {
     Poco::Net::StreamSocket& sock = this->socket();
-    cout << "New connection from: " << this->ip() <<  endl << flush;
+    poco_information_f1(_logger, "New connection from: %s", this->ip());
     bool isOpen = true;
     Poco::Timespan timeOut(10, 0);
     int nbytes;
@@ -38,25 +39,28 @@ void HpFeedClient::run()
                 nbytes = sock.receiveBytes(_inBuffer, sizeof(_inBuffer));
             } catch (Poco::Exception& exc) {
                 // Handle your network errors.
-                cerr << "Network error: " << exc.displayText() << endl;
+                poco_critical_f1(_logger, "Network error: %s", exc.displayText());
+                //cerr << "Network error: " << exc.displayText() << endl;
                 isOpen = false;
             }
 
             if (nbytes == 0) {
-                cout << "Client closes connection!" << endl << flush;
+                poco_debug(_logger, "Client closes connection!");
                 isOpen = false;
             } else {
                 // Main message parsing routine
                 if (this->type() == "subscribe") {
                     _router.subscribe(this->channel(), &sock);
+                    continue;
                 }
                 if (this->type() == "publish") {
                     _router.publish(this->channel(), &sock, _inBuffer, nbytes);
+                    continue;
                 }
             }
         }
     }
-    cout << "Client disconnected" << endl << flush;
+    poco_debug(_logger, "Client disconnected");
 }
 
 string HpFeedClient::type()

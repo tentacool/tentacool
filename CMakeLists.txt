@@ -46,8 +46,13 @@ set(TENTACOOL_SRC
   ${CMAKE_SOURCE_DIR}/hpfeedbroker.cpp
   ${CMAKE_SOURCE_DIR}/authenticator.cpp
   ${CMAKE_SOURCE_DIR}/message_router.cpp
-  ${CMAKE_SOURCE_DIR}/logger.cpp
 )
+
+#######################################################################
+# Setup the CFLAGS (for any environment)
+#######################################################################
+set(CMAKE_CXX_FLAGS "-Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -D_DEBUG")
 
 add_executable(tentacool ${TENTACOOL_SRC})
 
