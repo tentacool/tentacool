@@ -46,6 +46,7 @@ void HpFeedClient::run()
         memset(_inBuffer, 0x0, 1000);
 
         if (!_sock.poll(timeOut,Poco::Net::Socket::SELECT_READ) == false) {
+            cout << "LETTO QUALCOSA\n";
             nbytes = -1;
 
             try {
@@ -62,11 +63,12 @@ void HpFeedClient::run()
                 poco_debug(_logger, "Client closes connection!");
                 isOpen = false;
             } else {
+                cout << "LEGGO DAti " << _state << endl;
                 switch (_state) {
                     case S_AUTHENTICATION_PROCEEDING:
                         this->authUser();
                         if (_state != S_AUTHENTICATED) {
-                            return ;
+                            return;
                         }
                         break;
                     case S_AUTHENTICATED:
@@ -74,11 +76,14 @@ void HpFeedClient::run()
                         msg = (hpf_msg_t *)_inBuffer;
                         cout << "OPCODE " << int(msg->hdr.opcode) << endl;
                         switch (msg->hdr.opcode) {
-                            // XXX
-                            case 4:
+                            case OP_SUBSCRIBE:
                                 poco_debug(_logger, "Subscribe incoming");
                                 break;
+                            case OP_PUBLISH:
+                                poco_debug(_logger, "Publish incoming");
+                                break;
                             default:
+                                poco_debug(_logger, "Out of sequence message");
                                 break;
                         }
                         break;
@@ -94,8 +99,14 @@ void HpFeedClient::run()
 
 void HpFeedClient::authUser()
 {
-	hpf_chunk_t *chunk;
-	hpf_msg_t* msg = (hpf_msg_t *)_inBuffer;
+    hpf_chunk_t *chunk;
+    hpf_msg_t* msg = (hpf_msg_t *)_inBuffer;
+    
+    if (msg->hdr.opcode != OP_AUTH) {
+        poco_debug_f1(_logger, "Unexpected message: %d", msg->hdr.opcode);
+        return;
+    }
+
     chunk = hpf_msg_get_chunk((u_char*)_inBuffer + sizeof(msg->hdr),
         ntohl(msg->hdr.msglen) - sizeof(msg->hdr));
 
