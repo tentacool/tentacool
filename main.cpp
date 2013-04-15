@@ -28,6 +28,7 @@ int main(int argc, char** argv)
     Poco::Logger::root().setLevel("debug");
 
     HpFeedBroker b;
+    HpFeedBroker::name = "Broker";
     b.run();
 
     return 0;

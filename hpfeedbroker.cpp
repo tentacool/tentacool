@@ -11,6 +11,8 @@
 
 using namespace std;
 
+string HpFeedBroker::name;
+
 HpFeedBroker::HpFeedBroker(int tcp_port, int threads, int queuelen, int idletime) :
     _port(tcp_port), _threads(threads), _queuelen(queuelen), _idletime(idletime),
     _logger(Poco::Logger::get("Tentacool.HpFeedBroker"))

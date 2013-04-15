@@ -44,7 +44,7 @@ public:
     // The authentication method.
     // @param ident The username for the authentication
     // @param secret The hashed password
-    bool authenticate(std::string ident, std::string secret) const;
+    bool authenticate(std::string ident, std::string secret);
 };
 
 #endif

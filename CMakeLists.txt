@@ -35,7 +35,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "")
 
 set(TENTACOOL_LINK_FLAGS
-    "-lPocoFoundation -lPocoNet")
+    "-lPocoFoundation -lPocoNet -lhpfeeds")
 
 # Set component parameters
 set(TENTACOOL_INCLUDE_DIRS ${CMAKE_SOURCE_DIR} CACHE INTERNAL "" FORCE)
@@ -51,7 +51,7 @@ set(TENTACOOL_SRC
 #######################################################################
 # Setup the CFLAGS (for any environment)
 #######################################################################
-set(CMAKE_CXX_FLAGS "-Wall")
+set(CMAKE_CXX_FLAGS "-Wall -Werror")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -D_DEBUG")
 
 add_executable(tentacool ${TENTACOOL_SRC})
