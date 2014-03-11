@@ -1,4 +1,3 @@
-
 #ifndef __BROKER_HPP__
 #define __BROKER_HPP__
 
@@ -17,7 +16,7 @@ public:
 
     static std::string name;
 
-    //! Maint broker routine
+    //! Main broker routine
     void run();
 
     ~HpFeedBroker();
