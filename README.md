@@ -8,9 +8,6 @@ Compilation
 
 To compile the project, follow the next instructions:
 
-    mkdir build
-    cd build
-    cmake ..
-    [resolve any cmake dependency issue]
-    make
-
+    //No compilation instructios yet
+	
+Aldo Mollica
