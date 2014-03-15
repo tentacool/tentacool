@@ -5,4 +5,5 @@ class Prova{
 	
 	Prova():num(4){}
 	int getNum(){ return num;}
+	void setNum(){ cin>>num; }
 }
