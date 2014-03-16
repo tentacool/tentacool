@@ -9,10 +9,10 @@
 #include <set>
 #include <memory>
 #include "SafeSet.hpp"
+#include "rw_lock_t.hpp"
 
 typedef std::string Channel;
 typedef Poco::Net::StreamSocket* StreamSocketPtr;
-//typedef std::set<StreamSocketPtr> StreamSocketPtrSet;
 typedef SafeSet<StreamSocketPtr> StreamSocketPtrSet;   //Here i'm using my own thread_safe set
 typedef std::map<Channel, StreamSocketPtrSet> ChannelMap;
 
@@ -22,6 +22,9 @@ class MessageRouter {
 
     //! The Poco Logger
     Poco::Logger& _logger;
+
+    //! Map rw_lock mutex
+    rw_lock_t _map_mutex;
 public:
     //! Constructor
     MessageRouter();

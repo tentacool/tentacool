@@ -74,7 +74,7 @@ public:
 		m_helpRequested(false), _debug_mode(false)
 		, logger(Logger::get("HF_Broker"))
 		, port(10000), num_threads(10), queuelen(20), idletime(100)
-		, _data_mode(false), _filename("/home/aldo/workspace/HpfeedsBroker_2/src/auth_keys.dat")
+		, _data_mode(false), _filename("/home/aldo/workspace/HpfeedsBroker/src/auth_keys.dat")
 		, _mongo_ip("127.0.0.1"), _mongo_port("27017"), _mongo_db("hpfeeds"), _mongo_collection("auth_key")
 	{
 		/*! Constructor - create the log FileChannel e the formatting 		*/
@@ -248,10 +248,13 @@ protected:
 			//Create File manager
 			/*if(!_data_mode) DataManager _data_manager(_filename);
 			else DataManager _data_manager(_mongo_ip,_mongo_port,_mongo_db,_mongo_collection);*/
-
-			if(!_data_mode) _data_manager = new DataManager(_filename);
-			else _data_manager = new DataManager(_mongo_ip,_mongo_port,_mongo_db,_mongo_collection);
-
+			try{
+				if(!_data_mode) _data_manager = new DataManager(_filename);
+				else _data_manager = new DataManager(_mongo_ip,_mongo_port,_mongo_db,_mongo_collection);
+			}catch(Poco::Exception& exc){
+				logger.error(exc.displayText());
+				return Poco::Util::ServerApplication::EXIT_IOERR;
+			}
 			logger.information("HpfeedsBroker started "+d);
 
 			// Create a server socket in order to listen to the port

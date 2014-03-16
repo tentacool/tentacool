@@ -9,10 +9,21 @@
 #include "message_router.hpp"
 #include "Authenticator.hpp"
 #include "DataManager.hpp"
+
+
+#define DATA 10*1024*1024 //10MB
+#define MAXBUF DATA+5 //5 is the common header for all messages (msg_lenght (4) + opcode (1))
+
 using namespace std;
 
-
-/*extern DataManager data_manager;*/
+typedef enum {
+	 OP_ERROR ,
+	 OP_INFO ,
+	 OP_AUTH,
+	 OP_PUBLISH ,
+	 OP_SUBSCRIBE ,
+	 OP_UNSUBSCRIBE
+} OP_CODES;
 
 typedef enum {
     S_INIT,
@@ -21,6 +32,8 @@ typedef enum {
     S_SUBSCRIBED,
     S_ERROR
 } hpfeeds_server_state_t;
+
+static map<int, uint32_t> message_sizes;
 
 
 class HpfeedsBrokerConnection : public Poco::Net::TCPServerConnection {
@@ -31,7 +44,7 @@ class HpfeedsBrokerConnection : public Poco::Net::TCPServerConnection {
     static MessageRouter _router;
 
     //! The network buffer
-    char _inBuffer[1000];
+    char _inBuffer[MAXBUF];
 
     //! The Poco logger
     Poco::Logger& _logger;

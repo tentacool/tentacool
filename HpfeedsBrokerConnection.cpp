@@ -5,6 +5,7 @@
 #include <string.h>
 #include <memory>
 #include "Poco/NumberParser.h"
+#include "Poco/Net/NetException.h"
 #include "Poco/NumberFormatter.h"
 #include "DataManager.hpp"
 
@@ -25,6 +26,12 @@ HpfeedsBrokerConnection::HpfeedsBrokerConnection(const Poco::Net::StreamSocket& 
         _logger(Poco::Logger::get("HF_Broker")),
         _data_manager(data_manager), _state(S_INIT)
 {
+	message_sizes[OP_ERROR] = MAXBUF;
+	message_sizes[OP_INFO] = 5+1+256+20;
+	message_sizes[OP_AUTH] = 5+1+256+20;
+	message_sizes[OP_PUBLISH] = MAXBUF;
+	message_sizes[OP_SUBSCRIBE] = 5+2+256*2;
+	message_sizes[OP_UNSUBSCRIBE] = 5+2+256*2;
 }
 
 inline string HpfeedsBrokerConnection::ip()
@@ -36,10 +43,10 @@ void HpfeedsBrokerConnection::run()
 {
     _sock = this->socket();
     _logger.information("New connection from: "+this->ip());
-
+    uint32_t _header_len;
     //sleep(10);
     bool isOpen = true;
-    //Poco::Timespan timeOut(10, 0); //sec, usec
+    Poco::Timespan timeOut(10, 0); //sec, usec
     int nbytes;
 	hpf_msg_t *msg;
 
@@ -51,15 +58,19 @@ void HpfeedsBrokerConnection::run()
     _state = S_AUTHENTICATION_PROCEEDING;
 
     while (isOpen) {
-        memset(_inBuffer, 0x0, 1000);
+        memset(_inBuffer, 0x0, MAXBUF);
 
-    //    if (!_sock.poll(timeOut,Poco::Net::Socket::SELECT_READ) == false) {
-     //       cout << "LETTO QUALCOSA\n";
+        if (!_sock.poll(timeOut,Poco::Net::Socket::SELECT_READ) == false) {
             nbytes = -1;
 
             try {
                 // Receiving bytes from client
-                nbytes = _sock.receiveBytes(_inBuffer, sizeof(_inBuffer));
+            	// Because the two messages from client are sent together
+            	// I've to distinguish here the auth message from the publish or subscribe
+                nbytes = _sock.receiveBytes(_inBuffer, sizeof(uint32_t));
+                memcpy ( &_header_len, _inBuffer,sizeof(uint32_t) );
+                nbytes = _sock.receiveBytes(_inBuffer+sizeof(uint32_t), ntohl(_header_len)- sizeof(uint32_t));
+
             } catch (Poco::Exception& exc) {
                 // Handle your network errors.
                 _logger.error("Network error: "+exc.displayText());
@@ -75,13 +86,19 @@ void HpfeedsBrokerConnection::run()
                     case S_AUTHENTICATION_PROCEEDING:
                         this->authUser();
                         if (_state != S_AUTHENTICATED) {
-                            return;
+                        	isOpen = false;
                         }
                         break;
                     case S_AUTHENTICATED:
-                        // Read message from socket
                         msg = (hpf_msg_t *)_inBuffer;
                         cout << "OPCODE " << int(msg->hdr.opcode) << endl;
+
+                        if(ntohl(msg->hdr.msglen)>message_sizes[int(msg->hdr.opcode)]){
+                        	//If the message is too long for its type
+                            _logger.error("Oversized Message -> Bad client");
+                            isOpen = false;
+                            return;
+                        }
                         switch (int(msg->hdr.opcode)) {
                             case OP_SUBSCRIBE: ////////// SUBSCRIBE //////////
                             {
@@ -110,7 +127,7 @@ void HpfeedsBrokerConnection::run()
 									_state = S_SUBSCRIBED;
                             	}catch(Poco::Exception& e){
                             		hpf_msg_delete(msg);
-                            		_logger.error(e.displayText());
+                            		_logger.error("!!!"+e.displayText());
                             	}
                                 break;
                             }
@@ -152,7 +169,7 @@ void HpfeedsBrokerConnection::run()
                                 break;
                             default:
                         		string err = "Out of sequence message";
-                            	_logger.information(err);
+                            	_logger.error(err);
                         		msg = hpf_msg_error((u_char*)err.data(), err.size());
                         		_logger.debug("Sending ERROR message to the client...");
                         		_sock.sendBytes(msg, ntohl(msg->hdr.msglen));
@@ -167,7 +184,7 @@ void HpfeedsBrokerConnection::run()
                         break;
                 }
             }
-      //  } //It's the _sock.poll(...) closing parenthesis
+        } //It's the _sock.poll(...) closing parenthesis
     }
 }
 
@@ -176,9 +193,17 @@ void HpfeedsBrokerConnection::authUser()
     hpf_chunk_t *chunk;
     hpf_msg_t* msg = (hpf_msg_t *)_inBuffer;
 
+
     if (msg->hdr.opcode != OP_AUTH) {
         _logger.information("Unexpected message: "+ NumberFormatter::format(msg->hdr.opcode));
         return;
+    }
+    if(ntohl(msg->hdr.msglen)>message_sizes[int(msg->hdr.opcode)]){
+        //If the message is too long for its type
+       _logger.error("Oversized Message -> Bad client");
+       _state = S_ERROR;
+       hpf_msg_delete(msg);
+       return;
     }
 
     chunk = hpf_msg_get_chunk((u_char*)_inBuffer + sizeof(msg->hdr),
@@ -201,8 +226,13 @@ void HpfeedsBrokerConnection::authUser()
         _state = S_INIT;
         hpf_msg_delete(msg);
     }
- }catch(exception&  e){
-	 cout<<e.what()<<endl;
+ }catch(Poco::Exception&  e){
+	 _logger.error(e.displayText());
+	 string err = "accessfail";
+	 msg = hpf_msg_error((u_char*)err.data(), err.size());
+	 _logger.debug("Sending ERROR message to the client...");
+	 _sock.sendBytes(msg, ntohl(msg->hdr.msglen));
+	 hpf_msg_delete(msg);
 	 _state = S_ERROR;
  }
 }

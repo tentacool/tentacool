@@ -22,7 +22,7 @@ DataManager::DataManager( string& filename): _logger(Logger::get("HF_Broker")), 
 	 *\param filename (with absolute path)
 	 */
 	_input.open(_filename.c_str());
-	if(!_input) throw exception();
+	if(!_input) throw Poco::Exception("Error opening the file");
 	string line ="";
 	while(getline(_input,line )){
 		Poco::StringTokenizer fields(line,";",Poco::StringTokenizer::TOK_TRIM);
@@ -68,8 +68,8 @@ DataManager::DataManager(const string& mongo_ip, const string& mongo_port, const
 			_usersMap[p.getStringField("identifier")] = u;
 		}
 	}catch(mongo::AssertionException& ae){
-		throw new mongo::AssertionException(ae);
-	}catch(exception& e){ throw new exception();}
+		throw  mongo::AssertionException(ae);
+	}catch(exception& e){ throw  exception();}
 	_logger.information("Data fetching from mongodb completed!");
 
 }
@@ -81,11 +81,11 @@ const string& DataManager::getSecretbyName(const string& name){
 	 * Return the secret of the specified user
 	 * \param Username
 	 */
-	if(name.compare("")==0) throw new exception();
-	UserMap::iterator iter = _usersMap.find(name);
+	if(name.compare("")==0) throw  exception();
+	UserMap::const_iterator iter = _usersMap.find(name);
 	if(iter!=_usersMap.end()){ //found it!
 		return (*iter).second.secret;
-	}else throw new exception();
+	}else throw  Poco::Exception("User not present!");
 }
 bool DataManager::may_subscribe (const string& name, const string& channel) const{
 	/*!
@@ -99,7 +99,7 @@ bool DataManager::may_subscribe (const string& name, const string& channel) cons
 		user_data u = (*iter).second;
 		if(find(u._subscribe_chs.begin(), u._subscribe_chs.end(), channel)!=u._subscribe_chs.end()) return true;
 		else return false;
-	}else throw new exception();
+	}else throw  exception();
 
 	return false;
 }
@@ -117,7 +117,7 @@ bool DataManager::may_publish (const string& name, const string& channel) const{
 		user_data u = (*iter).second;
 		if(find(u._publish_chs.begin(), u._publish_chs.end(), channel)!=u._publish_chs.end()) return true;
 		else return false;
-	}else throw new exception();
+	}else throw  exception();
 
 	return false;
 }
