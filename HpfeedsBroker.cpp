@@ -1,9 +1,9 @@
 //============================================================================
-// Name        : Main.cpp
-// Author      : 
+// Name        : HpfeedsBroker.cpp
+// Author      : Aldo Mollica
 // Version     :
 // Copyright   : Your copyright notice
-// Description : Hpfeeds Brocker in C++, Ansi-style
+// Description : Hpfeeds Broker in C++, Ansi-style
 //============================================================================
 
 #include <iostream>
@@ -28,7 +28,7 @@
 #include "Poco/Net/TCPServer.h"
 #include "Poco/Net/TCPServerParams.h"
 #include "Poco/Net/TCPServerConnectionFactory.h"
-#include "HpfeedsBrockerConnection.hpp"
+#include "HpfeedsBrokerConnection.hpp"
 #include "DataManager.hpp"
 
 using namespace std;
@@ -52,34 +52,34 @@ public:
 
 	Poco::Net::TCPServerConnection* createConnection(const Poco::Net::StreamSocket& socket)
 	{
-		return new HpfeedsBrockerConnection(socket, _data_m);
+		return new HpfeedsBrokerConnection(socket, _data_m);
 	}
 
 private:
 	DataManager*	_data_m;
 };
 /*!
-		To test the HpfeedsBrockerApplication you can use any terminal with "telnet localhost 10000".
+		To test the HpfeedsBrokerApplication you can use any terminal with "telnet localhost 10000".
 *		10000 is the default port.
 		NOTE: Currently the SimpleFileChannel use is commented, so messages goes through std output
 */
 
 
-class HpfeedsBrockerApplication : public Poco::Util::ServerApplication
+class HpfeedsBrokerApplication : public Poco::Util::ServerApplication
 {
 public:
 
 
-	HpfeedsBrockerApplication() :
+	HpfeedsBrokerApplication() :
 		m_helpRequested(false), _debug_mode(false)
-		, logger(Logger::get("HF_Brocker"))
+		, logger(Logger::get("HF_Broker"))
 		, port(10000), num_threads(10), queuelen(20), idletime(100)
-		, _data_mode(false), _filename("/home/aldo/workspace/HpfeedsBrocker_2/src/auth_keys.dat")
+		, _data_mode(false), _filename("/home/aldo/workspace/HpfeedsBroker_2/src/auth_keys.dat")
 		, _mongo_ip("127.0.0.1"), _mongo_port("27017"), _mongo_db("hpfeeds"), _mongo_collection("auth_key")
 	{
 		/*! Constructor - create the log FileChannel e the formatting 		*/
 		AutoPtr<SimpleFileChannel> sfChannel(new SimpleFileChannel);
-		sfChannel->setProperty("path", "hpfeedsbrocker.log");
+		sfChannel->setProperty("path", "hpfeedsBroker.log");
 		sfChannel->setProperty("rotation", "2 K"); //Overwrite file at 2KB
 
 		AutoPtr<PatternFormatter> sfPF(new PatternFormatter);
@@ -92,9 +92,9 @@ public:
 		//logger.setChannel(sfFC); //Uncomment to set the logging to the file
 	}
 
-	~HpfeedsBrockerApplication()
+	~HpfeedsBrokerApplication()
 	{   /*! Destructor	*/
-		logger.information("HpfeedsBrocker shutting down");
+		logger.information("HpfeedsBroker shutting down");
 	}
 
 protected:
@@ -128,18 +128,18 @@ protected:
 							.repeatable(false));
 
 		options.addOption(
-			Poco::Util::Option("port", "p", "define the port HpfeedsBrocker will listen to")
+			Poco::Util::Option("port", "p", "define the port HpfeedsBroker will listen to")
 						.required(false)
 						.argument("port")
 						.validator(new Util::IntValidator(1024, 65535))
-						.callback(Poco::Util::OptionCallback<HpfeedsBrockerApplication>(this, &HpfeedsBrockerApplication::handlePort)));
+						.callback(Poco::Util::OptionCallback<HpfeedsBrokerApplication>(this, &HpfeedsBrokerApplication::handlePort)));
 
 		options.addOption(
 			Poco::Util::Option("mode", "m", "set the way to fetch authentication data")
 							.required(true)
 							.argument("mode")
 							.validator(new Util::RegExpValidator("file|mongodb"))
-		.callback(Poco::Util::OptionCallback<HpfeedsBrockerApplication>(this, &HpfeedsBrockerApplication::handleMode)));
+		.callback(Poco::Util::OptionCallback<HpfeedsBrokerApplication>(this, &HpfeedsBrokerApplication::handleMode)));
 
 
 		options.addOption(
@@ -218,16 +218,16 @@ protected:
 		\param name is a string with the option name.
 		\param value is a string with the value.
 		*/
-		port = (unsigned short) config().getInt("HpfeedsBrockerApplication.port", NumberParser::parseUnsigned(value));
-		logger.information("HpfeedsBrocker port setted to "+NumberFormatter::format(port));
+		port = (unsigned short) config().getInt("HpfeedsBrokerApplication.port", NumberParser::parseUnsigned(value));
+		logger.information("HpfeedsBroker port setted to "+NumberFormatter::format(port));
 	}
 	void displayHelp()
 	{
 		/*! Display the result of -h option*/
 		Poco::Util::HelpFormatter helpFormatter(options());
 		helpFormatter.setCommand(commandName());
-		helpFormatter.setUsage("HpfeedsBrocker -p port");
-		helpFormatter.setHeader("HpfeedsBrocker is a hpfeeds messages brocker.");
+		helpFormatter.setUsage("HpfeedsBroker -p port");
+		helpFormatter.setHeader("HpfeedsBroker is a hpfeeds messages Broker.");
 		helpFormatter.format(std::cout);
 	}
 
@@ -252,11 +252,11 @@ protected:
 			if(!_data_mode) _data_manager = new DataManager(_filename);
 			else _data_manager = new DataManager(_mongo_ip,_mongo_port,_mongo_db,_mongo_collection);
 
-			logger.information("HpfeedsBrocker started "+d);
+			logger.information("HpfeedsBroker started "+d);
 
 			// Create a server socket in order to listen to the port
 			Net::ServerSocket svs(port);
-			logger.information("HpfeedsBrocker server socket in listening.");
+			logger.information("HpfeedsBroker server socket in listening.");
 
 		    // Configure some server parameters.
 		    Poco::Net::TCPServerParams* pParams = new Poco::Net::TCPServerParams();
@@ -267,7 +267,7 @@ protected:
 		    logger.information("Setting idle time: "+NumberFormatter::format(idletime));
 		    pParams->setThreadIdleTime(idletime);
 
-			Net::TCPServer server(new TCPConnectionFactory(_data_manager)/*new Net::TCPServerConnectionFactoryImpl<HpfeedsBrockerConnection>()*/,svs, pParams	);
+			Net::TCPServer server(new TCPConnectionFactory(_data_manager)/*new Net::TCPServerConnectionFactoryImpl<HpfeedsBrokerConnection>()*/,svs, pParams	);
 			server.start();
 
 			// wait for CTRL-C or kill
@@ -296,7 +296,7 @@ private:
 
 
 //----------------------------------------
-//	FeedsBrockerApplication main
+//	FeedsBrokerApplication main
 //----------------------------------------
-POCO_SERVER_MAIN(HpfeedsBrockerApplication)
+POCO_SERVER_MAIN(HpfeedsBrokerApplication)
 

@@ -1,5 +1,5 @@
 
-#include "HpfeedsBrockerConnection.hpp"
+#include "HpfeedsBrokerConnection.hpp"
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
@@ -15,24 +15,24 @@ extern "C" {
 using namespace std;
 using namespace Poco;
 
-string HpfeedsBrockerConnection::brocker_name = "@hp1";
+string HpfeedsBrokerConnection::Broker_name = "@hp1";
 
-MessageRouter HpfeedsBrockerConnection::_router;
+MessageRouter HpfeedsBrokerConnection::_router;
 
-HpfeedsBrockerConnection::HpfeedsBrockerConnection(const Poco::Net::StreamSocket& s, DataManager* data_manager) :
+HpfeedsBrokerConnection::HpfeedsBrokerConnection(const Poco::Net::StreamSocket& s, DataManager* data_manager) :
         Poco::Net::TCPServerConnection(s),
         _sock(this->socket()),
-        _logger(Poco::Logger::get("HF_Brocker")),
+        _logger(Poco::Logger::get("HF_Broker")),
         _data_manager(data_manager), _state(S_INIT)
 {
 }
 
-inline string HpfeedsBrockerConnection::ip()
+inline string HpfeedsBrokerConnection::ip()
 {
     return _sock.peerAddress().host().toString();
 }
 
-void HpfeedsBrockerConnection::run()
+void HpfeedsBrokerConnection::run()
 {
     _sock = this->socket();
     _logger.information("New connection from: "+this->ip());
@@ -44,7 +44,7 @@ void HpfeedsBrockerConnection::run()
 	hpf_msg_t *msg;
 
     // Start the authentication phase
-    msg = hpf_msg_info(_auth.genNonce(), (u_char*) brocker_name.data(), brocker_name.size());
+    msg = hpf_msg_info(_auth.genNonce(), (u_char*) Broker_name.data(), Broker_name.size());
     _logger.debug("Sending INFO message to the client...");
     _sock.sendBytes(msg, ntohl(msg->hdr.msglen));
     hpf_msg_delete(msg);
@@ -171,7 +171,7 @@ void HpfeedsBrockerConnection::run()
     }
 }
 
-void HpfeedsBrockerConnection::authUser()
+void HpfeedsBrokerConnection::authUser()
 {
     hpf_chunk_t *chunk;
     hpf_msg_t* msg = (hpf_msg_t *)_inBuffer;
@@ -207,7 +207,7 @@ void HpfeedsBrockerConnection::authUser()
  }
 }
 
-HpfeedsBrockerConnection::~HpfeedsBrockerConnection()
+HpfeedsBrokerConnection::~HpfeedsBrokerConnection()
 {
 	if(_state==S_SUBSCRIBED)_router.unsubscribe(&_sock);
 	_logger.information("Closed connection from: "+this->ip());

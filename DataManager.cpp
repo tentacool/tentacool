@@ -16,7 +16,7 @@
 #include <stdio.h>
 
 
-DataManager::DataManager( string& filename): _logger(Logger::get("HF_Brocker")), _mode(false), _filename(filename) {
+DataManager::DataManager( string& filename): _logger(Logger::get("HF_Broker")), _mode(false), _filename(filename) {
 	/*!
 	 *\brief Initialize the users data structures reading from file
 	 *\param filename (with absolute path)
@@ -41,15 +41,15 @@ DataManager::DataManager( string& filename): _logger(Logger::get("HF_Brocker")),
 
 }
 DataManager::DataManager(const string& mongo_ip, const string& mongo_port, const string& mongo_db, const string& mongo_collection)
-:_logger(Logger::get("HP_Brocker")), _mode(true), _mongoip(mongo_ip), _mongoport(mongo_port), _mongo_db(mongo_db), _mongo_collection(mongo_collection)
+:_logger(Logger::get("HF_Broker")), _mode(true), _mongoip(mongo_ip), _mongoport(mongo_port), _mongo_db(mongo_db), _mongo_collection(mongo_collection)
 {
 	mongo::DBClientConnection _conn;
 	try{
-		_logger.information("Connecting to Mongodb...");
-		_logger.information("Mongo IP: "+_mongoip);
-		_logger.information("Mongo Port: "+_mongoport);
-		_logger.information("Mongo DB: "+_mongo_db);
-		_logger.information("Mongo Collection: "+_mongo_collection);
+		_logger.debug("Connecting to Mongodb...");
+		_logger.debug("Mongo IP: "+_mongoip);
+		_logger.debug("Mongo Port: "+_mongoport);
+		_logger.debug("Mongo DB: "+_mongo_db);
+		_logger.debug("Mongo Collection: "+_mongo_collection);
 		_conn.connect(_mongoip);
 	}catch(mongo::DBException& dbe){
 		_logger.error("Connection to MongoDB failed!");

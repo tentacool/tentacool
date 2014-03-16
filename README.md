@@ -8,6 +8,6 @@ Compilation
 
 To compile the project, follow the next instructions:
 
-    //No compilation instructios yet
+    //No compilation instructions yet
 	
 Aldo Mollica

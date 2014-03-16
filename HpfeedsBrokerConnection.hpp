@@ -23,7 +23,7 @@ typedef enum {
 } hpfeeds_server_state_t;
 
 
-class HpfeedsBrockerConnection : public Poco::Net::TCPServerConnection {
+class HpfeedsBrokerConnection : public Poco::Net::TCPServerConnection {
     //! Reference to the client socket
     Poco::Net::StreamSocket& _sock; ///! Reference to the client socket
 
@@ -49,10 +49,10 @@ class HpfeedsBrockerConnection : public Poco::Net::TCPServerConnection {
     void authUser();
 public:
     //! Constructor
-    HpfeedsBrockerConnection(const Poco::Net::StreamSocket& s, DataManager* data_manager);
+    HpfeedsBrokerConnection(const Poco::Net::StreamSocket& s, DataManager* data_manager);
 
     //! Destructor
-    ~HpfeedsBrockerConnection();
+    ~HpfeedsBrokerConnection();
 
     //! Client management main routine
     void run();
@@ -60,8 +60,8 @@ public:
     //! The ip of the peer
     inline std::string ip();
 
-    //! Hpfeeds Brocker server name
-	static string brocker_name;
+    //! Hpfeeds Broker server name
+	static string Broker_name;
 };
 
 #endif

@@ -10,7 +10,7 @@ using namespace std;
 template<typename T>Poco::Mutex  SafeSet<T>::_mutex;
 
 MessageRouter::MessageRouter() :
-    _logger(Poco::Logger::get("HF_Brocker"))
+    _logger(Poco::Logger::get("HF_Broker"))
 {
 }
 

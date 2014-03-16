@@ -27,7 +27,7 @@ const uint32_t Authenticator::genNonce()
 
 bool Authenticator::authenticate(string ident, string hash, string password)
 {
-	/*! Authenticate a Client by name and the hash received by the brocker
+	/*! Authenticate a Client by name and the hash received by the broker
 	 *
 	 */
     //string password = "none";
