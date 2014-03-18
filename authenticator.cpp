@@ -3,13 +3,12 @@
 
 #include <iostream>
 #include <stdio.h>
-#include "DataManager.hpp"
 #include "Poco/SHA1Engine.h"
 #include "Poco/DigestEngine.h"
 
 using namespace std;
 
-Authenticator::Authenticator(int seed): _nonce(_prng.next()/*1234*/)
+Authenticator::Authenticator(int seed): _nonce(1234)
 {
     if (seed > 0) {
         _prng.seed(seed);
@@ -21,14 +20,14 @@ Authenticator::Authenticator(int seed): _nonce(_prng.next()/*1234*/)
 
 const uint32_t Authenticator::genNonce()
 {
-	//_nonce = _prng.next();
+	_nonce = _prng.next();
     return _nonce;
 }
 
-bool Authenticator::authenticate(string ident, string hash, string password)
+bool Authenticator::authenticate(string hash, string password)
 {
-	/*! Authenticate a Client by name and the hash received by the broker
-	 *
+	/*! Authenticate a Client by the hash received by the broker
+	 *  and the password
 	 */
     //string password = "none";
 

@@ -24,9 +24,9 @@ public:
     const uint32_t nonce() const { return _nonce; }
 
     /// The authentication method.
-    /// @param ident The username for the authentication
     /// @param hash The hashed password
-    bool authenticate(std::string ident, std::string hash, std::string password);
+    /// @param password The user password
+    bool authenticate( std::string hash, std::string password);
 };
 
 #endif
