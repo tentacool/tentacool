@@ -4,7 +4,7 @@
 #include "Poco/NumberFormatter.h"
 #include <iostream>
 #include "Poco/Mutex.h"
-#include "SafeSet.hpp"
+#include "safe_set.hpp"
 
 using namespace std;
 //template<typename T>Poco::Mutex  SafeSet<T>::_mutex;

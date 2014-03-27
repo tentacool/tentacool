@@ -1,6 +1,5 @@
-
-#ifndef __MESSAGE_ROUTER_HPP__
-#define __MESSAGE_ROUTER_HPP__
+#ifndef __MESSAGE_ROUTER__
+#define __MESSAGE_ROUTER__
 
 #include "Poco/Net/StreamSocket.h"
 #include "Poco/Logger.h"
@@ -8,12 +7,14 @@
 #include <string>
 #include <set>
 #include <memory>
-#include "SafeSet.hpp"
+#include "safe_set.hpp"
+//#include "safe_container.hpp"
 #include "rw_lock_t.hpp"
 
 typedef std::string Channel;
 typedef Poco::Net::StreamSocket* StreamSocketPtr;
 typedef SafeSet<StreamSocketPtr> StreamSocketPtrSet;   //Here i'm using my own thread_safe set
+//typedef SafeContainer<StreamSocketPtr,set<StreamSocketPtr>> StreamSocketPtrSet;   //Here i'm using my own thread_safe set
 typedef std::map<Channel, StreamSocketPtrSet> ChannelMap;
 
 class MessageRouter {

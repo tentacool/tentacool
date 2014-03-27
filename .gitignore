@@ -13,5 +13,9 @@ tentacool
 *.la
 *.a
 
+#Code Coverage measurement database and the execution report
+*.csmes
+*.csexe
+
 # Cmake build dir
 build/

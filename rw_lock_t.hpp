@@ -1,12 +1,5 @@
-/*
- * rw_lock_t.hpp
- *
- *  Created on: 14/mar/2014
- *      Author: aldo
- */
-
-#ifndef RW_LOCK_T_HPP_
-#define RW_LOCK_T_HPP_
+#ifndef __RW_LOCK_T__
+#define __RW_LOCK_T__
 
 #include <pthread.h>
 

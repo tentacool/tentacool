@@ -27,7 +27,6 @@
 #define	OP_PUBLISH 3
 #define	OP_SUBSCRIBE 4
 
-
 typedef struct {
 	/*! Struct representing an hpfeeds message  */
 	struct { /*! Struct representing an hpfeeds message header  */
