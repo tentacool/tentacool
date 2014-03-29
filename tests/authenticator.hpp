@@ -1,7 +1,6 @@
 #ifndef __AUTHENTICATOR__
 #define __AUTHENTICATOR__
 
-#include <string>
 #include <stdint.h>
 #include "Poco/Random.h"
 
@@ -14,6 +13,8 @@ public:
     //! \param seed The seed to use. Default value means to generate it
     //!             internally (random)
     Authenticator(int seed = 0);
+
+    ~Authenticator();
 
     //! Gets a nonce for the challenge. This starts the authentication routine
     //! for the client

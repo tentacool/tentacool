@@ -9,7 +9,7 @@ csg++ -I/usr/local/include/Poco -I/usr/local/include/Poco/Net -I/usr/local/inclu
 echo "Finished building: data_manager.cpp"
 
 #Building file: hpfeedbroker_tests.cpp
-csg++ -I/usr/local/include/Poco -I/usr/local/include/Poco/Net -I/usr/local/include/Poco/Util -I/usr/local/include/cppunit -I/usr/include/mongo/client -O3 -g -Wall -c -fmessage-length=0 -MMD -MP -MF"hpfeedbroker_tests.d" -MT"hpfeedbroker_tests.d" -o "hpfeedbroker_tests.o" "hpfeedbroker_tests.cpp"
+g++ -I/usr/local/include/Poco -I/usr/local/include/Poco/Net -I/usr/local/include/Poco/Util -I/usr/local/include/cppunit -I/usr/include/mongo/client -O3 -g -Wall -c -fmessage-length=0 -MMD -MP -MF"hpfeedbroker_tests.d" -MT"hpfeedbroker_tests.d" -o "hpfeedbroker_tests.o" "hpfeedbroker_tests.cpp"
 echo "Finished building: hpfeedbroker_tests.cpp"
  
 #Building target: FeedBrocker_tests
@@ -17,6 +17,6 @@ csg++ -L/usr/local/lib -L/usr/lib -o "FeedBrocker_tests"  ./authenticator.o ./da
 
 ./FeedBrocker_tests
 
-cmcsexeimport -e hpfeeds_broker.csexe -m FeedBrocker_tests.csmes -t "CppTestsCoverage" 
+cmcsexeimport -e FeedBrocker_tests.csexe -m FeedBrocker_tests.csmes -t "CppTestsCoverage" 
 
-cmreport --title=hpfeeds_broker.csexe -m FeedBrocker_tests.csmes --select='.*' --deselect=hpfeeds_broker.cpp --bargraph --toc --global=all --method=all --source=all --execution=all --html=cc.html
+cmreport --title=FeedBrocker_tests.csexe -m FeedBrocker_tests.csmes --select='.*' --deselect=hpfeeds_broker.cpp --bargraph --toc --global=all --method=all --source=all --execution=all --html=cc.html

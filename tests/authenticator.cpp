@@ -15,7 +15,9 @@ Authenticator::Authenticator(int seed): _nonce(0)
     }
     this->genNonce();
 }
-
+Authenticator::~Authenticator()
+{
+}
 const uint32_t Authenticator::genNonce()
 {
     _nonce = _prng.next();

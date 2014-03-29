@@ -1,7 +1,6 @@
 #ifndef __DATAMANAGERTESTS__
 #define __DATAMANAGERTESTS__
 
-#include <string>
 #include "data_manager.hpp"
 #include <cppunit/TestListener.h>
 #include <cppunit/CompilerOutputter.h>
