@@ -2,6 +2,9 @@
 #include "Poco/StringTokenizer.h"
 #include <fstream>
 #include <exception>
+#define MAX_FIELD_LENGTH 256
+
+using namespace Poco;
 
 DataManager::DataManager( string filename):
     _logger(Logger::get("HF_Broker")), _mode(false), _filename(filename) {
@@ -12,15 +15,21 @@ DataManager::DataManager( string filename):
     if(!_input) throw Poco::Exception("Error opening the file");
     string line = "";
     while(getline(_input,line )){
-        //TODO Input Validation
-        Poco::StringTokenizer fields(line,";",Poco::StringTokenizer::TOK_TRIM);
+        //TODO More input Validation?
+        if(line.empty()) break;
+        if(line.length() > 4*MAX_FIELD_LENGTH)
+            throw Poco::Exception("One or more fields are too long!");
+        StringTokenizer fields(line,";",StringTokenizer::TOK_TRIM
+                /*| StringTokenizer::TOK_IGNORE_EMPTY*/);
+        if(fields.count() != 4)
+            throw Poco::Exception("Invalid file structure!");
         user_data u;
         u.secret = fields[1];
-        Poco::StringTokenizer pub_channels(fields[2],",",Poco::StringTokenizer::TOK_TRIM);
-        Poco::StringTokenizer sub_channels(fields[3],",",Poco::StringTokenizer::TOK_TRIM);
-        for(Poco::StringTokenizer::Iterator iter= pub_channels.begin();
+        StringTokenizer pub_channels(fields[2],",",StringTokenizer::TOK_TRIM);
+        StringTokenizer sub_channels(fields[3],",",StringTokenizer::TOK_TRIM);
+        for(StringTokenizer::Iterator iter= pub_channels.begin();
                 iter!=pub_channels.end();iter++)	u._publish_chs.insert((*iter));
-        for(Poco::StringTokenizer::Iterator iter2= sub_channels.begin();
+        for(StringTokenizer::Iterator iter2= sub_channels.begin();
                 iter2!=sub_channels.end();iter2++)	u._subscribe_chs.insert(*iter2);
         _usersMap[fields[0]] = u;
     }

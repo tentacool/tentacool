@@ -3,8 +3,8 @@
 
 #include <pthread.h>
 
-class rw_lock_t {
-
+class rw_lock_t
+{
     int NoOfReaders, NoOfWriters, NoOfWritersWaiting;
     pthread_mutex_t class_mutex;
     pthread_cond_t  reader_gate;
@@ -13,10 +13,10 @@ class rw_lock_t {
 public:
     rw_lock_t();
     virtual ~rw_lock_t();
-    void  r_lock();
-    void  w_lock();
-    void  r_unlock();
-    void  w_unlock();
+    void r_lock();
+    void w_lock();
+    void r_unlock();
+    void w_unlock();
 };
 
-#endif /* RW_LOCK_T_HPP_ */
+#endif /* __RW_LOCK_T__ */

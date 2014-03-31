@@ -42,6 +42,7 @@ public:
             __coveragescanner_testname("");
         #endif
     }
+
 private:
     bool m_testFailed;
     // Prevents the use of the copy constructor and operator.

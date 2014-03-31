@@ -1,14 +1,13 @@
 #ifndef __MESSAGE_ROUTER__
 #define __MESSAGE_ROUTER__
 
-#include "Poco/Net/StreamSocket.h"
-#include "Poco/Logger.h"
+#include <Poco/Net/StreamSocket.h>
+#include <Poco/Logger.h>
 #include <map>
 #include <string>
 #include <set>
 #include <memory>
 #include "safe_set.hpp"
-//#include "safe_container.hpp"
 #include "rw_lock_t.hpp"
 
 typedef std::string Channel;

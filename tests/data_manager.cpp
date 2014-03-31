@@ -15,7 +15,7 @@ DataManager::DataManager( string filename):
     if(!_input) throw Poco::Exception("Error opening the file");
     string line = "";
     while(getline(_input,line )){
-        //TODO Input Validation
+        //TODO More input Validation?
         if(line.empty()) break;
         if(line.length() > 4*MAX_FIELD_LENGTH)
             throw Poco::Exception("One or more fields are too long!");

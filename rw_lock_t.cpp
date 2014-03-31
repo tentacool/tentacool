@@ -1,17 +1,9 @@
-/*
- * rw_lock_t.cpp
- *
- *  Created on: 14/mar/2014
- *      Author: aldo
- */
-
 #include <pthread.h>
 #include "rw_lock_t.hpp"
 
-/*!
- * This is an implementation of a read/write lock.
- * It's useful in our case because read accesses to shared data are much more frequent than write accesses.
- */
+//!
+// This is an implementation of a read/write lock.
+// It's useful in our case because read accesses to shared data are much more frequent than write accesses.
 
     rw_lock_t::rw_lock_t()
     : NoOfReaders(0), NoOfWriters(0), NoOfWritersWaiting(0),
@@ -25,7 +17,7 @@
         pthread_cond_destroy(&reader_gate);
         pthread_cond_destroy(&writer_gate);
     }
-    void  rw_lock_t::r_lock()
+    void rw_lock_t::r_lock()
     {
         pthread_mutex_lock(&class_mutex);
         //while(NoOfWriters>0 || NoOfWritersWaiting>0) //Writer Preference
@@ -36,7 +28,7 @@
         NoOfReaders++;
         pthread_mutex_unlock(&class_mutex);
     }
-    void  rw_lock_t::w_lock()
+    void rw_lock_t::w_lock()
     {
         pthread_mutex_lock(&class_mutex);
         NoOfWritersWaiting++;
@@ -47,7 +39,7 @@
         NoOfWritersWaiting--; NoOfWriters++;
         pthread_mutex_unlock(&class_mutex);
     }
-    void  rw_lock_t::r_unlock()
+    void rw_lock_t::r_unlock()
     {
         pthread_mutex_lock(&class_mutex);
         NoOfReaders--;
@@ -55,7 +47,7 @@
             pthread_cond_signal(&writer_gate);
         pthread_mutex_unlock(&class_mutex);
     }
-    void  rw_lock_t::w_unlock()
+    void rw_lock_t::w_unlock()
     {
         pthread_mutex_lock(&class_mutex);
         NoOfWriters--;

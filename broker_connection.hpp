@@ -1,10 +1,9 @@
-
 #ifndef __CONNECTION_MANAGER__
 #define __CONNECTION_MANAGER__
 
-#include "Poco/Net/Socket.h"
-#include "Poco/Net/TCPServerConnection.h"
-#include "Poco/Logger.h"
+#include <Poco/Net/Socket.h>
+#include <Poco/Net/TCPServerConnection.h>
+#include <Poco/Logger.h>
 #include <string>
 #include "message_router.hpp"
 #include "authenticator.hpp"
@@ -17,12 +16,12 @@
 using namespace std;
 
 typedef enum {
-	 OP_ERROR ,
-	 OP_INFO ,
-	 OP_AUTH,
-	 OP_PUBLISH ,
-	 OP_SUBSCRIBE ,
-	 OP_UNSUBSCRIBE
+    OP_ERROR ,
+    OP_INFO ,
+    OP_AUTH,
+    OP_PUBLISH ,
+    OP_SUBSCRIBE ,
+    OP_UNSUBSCRIBE
 } OP_CODES;
 
 typedef enum {
@@ -33,8 +32,8 @@ typedef enum {
     S_ERROR
 } hpfeeds_server_state_t;
 
+//! This Map has the max size of every message type (op_code)
 static map<int, uint32_t> message_sizes;
-
 
 class HpfeedsBrokerConnection : public Poco::Net::TCPServerConnection {
     //! Reference to the client socket

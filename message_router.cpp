@@ -1,9 +1,8 @@
-
 #include "message_router.hpp"
-#include "Poco/NumberParser.h"
-#include "Poco/NumberFormatter.h"
+#include <Poco/NumberParser.h>
+#include <Poco/NumberFormatter.h>
 #include <iostream>
-#include "Poco/Mutex.h"
+#include <Poco/Mutex.h>
 #include "safe_set.hpp"
 
 using namespace std;
@@ -16,15 +15,15 @@ MessageRouter::MessageRouter() :
 
 void MessageRouter::subscribe(Channel channel, StreamSocketPtr client)
 {
-	_logger.information("Subscribe request on channel "+channel+" for "+client->peerAddress().host().toString());
+    _logger.information("Subscribe request on channel "+channel+" for "+client->peerAddress().host().toString());
 
-	_map_mutex.r_lock();
+    _map_mutex.r_lock();
     StreamSocketPtrSet& channelset = _channels[channel];
     _map_mutex.r_unlock();
 
     StreamSocketPtrSet::iterator itr = channelset.find(client);
     if (itr == channelset.end()) { //there isn't
-    	_map_mutex.w_lock();
+        _map_mutex.w_lock();
         channelset.insert(client);
         _map_mutex.w_unlock();
     }
@@ -33,10 +32,9 @@ void MessageRouter::subscribe(Channel channel, StreamSocketPtr client)
 
 void MessageRouter::unsubscribe(StreamSocketPtr client)
 {
-	_logger.debug("Unsubscribe for "+client->peerAddress().host().toString());
+    _logger.debug("Unsubscribe for "+client->peerAddress().host().toString());
 
-
-	_map_mutex.w_lock();
+    _map_mutex.w_lock();
 
     for (ChannelMap::iterator it = _channels.begin(); it != _channels.end(); ++it)
     {
@@ -50,16 +48,15 @@ void MessageRouter::unsubscribe(StreamSocketPtr client)
 
 void MessageRouter::publish(Channel channel, StreamSocketPtr caller, u_char* message, uint32_t len)
 {
+    //cout<<"II: "+string((char*)message,len)<<endl;
+    _logger.information("Publishing message from "+caller->peerAddress().host().toString()+" on "+channel);
 
-	//cout<<"II: "+string((char*)message,len)<<endl;
-	_logger.information("Publishing message from "+caller->peerAddress().host().toString()+" on "+channel);
-
-	_map_mutex.r_lock();
+    _map_mutex.r_lock();
     StreamSocketPtrSet& channelset = _channels[channel];
-	_map_mutex.r_unlock();
+    _map_mutex.r_unlock();
 
     if (channelset.size() == 0) {
-    	_logger.information("Channel "+channel+" not present");
+        _logger.information("Channel "+channel+" not present");
         return;
     }
 

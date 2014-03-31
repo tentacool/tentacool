@@ -29,7 +29,8 @@ class DataManager
     typedef std::map<string,user_data> UserMap; //! Map<Channel Name, User Data>
 
 public:
-    DataManager( string filename);
+    //DataManager(); //! Dummy constructor
+    DataManager(string filename);
     DataManager(const string mongo_ip, const string mongodb_port,const string mongo_db, const string mongo_collection);
     virtual ~DataManager();
     const string getSecretbyName(const string name);
