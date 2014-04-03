@@ -129,39 +129,41 @@ protected:
                 (this, &HpfeedsBrokerApplication::handlePort)));
 
         options.addOption(
+        Poco::Util::Option("file", "f", "filename where fetch the authentication data")
+            .required(false)
+            .argument("file")
+            .repeatable(false));
+
+#ifdef __WITH_MONGO__
+        options.addOption(
         Poco::Util::Option("mode", "m", "set the way to fetch authentication data")
-            .required(true)
+            .required(false)
             .argument("mode")
             .validator(new Util::RegExpValidator("file|mongodb"))
             .callback(Poco::Util::OptionCallback<HpfeedsBrokerApplication>
                 (this, &HpfeedsBrokerApplication::handleMode)));
 
         options.addOption(
-        Poco::Util::Option("file", "f", "filename where fetch the authentication data")
-            .required(false)
-            .argument("file")
-            .repeatable(false).group("auth"));
-
-        options.addOption(
         Poco::Util::Option("mongoip", "m_ip", "The IP address of the mongodb")
             .required(false)
             .argument("mongoip")
-            .repeatable(false).group("mongo"));
+            .repeatable(false));
         options.addOption(
         Poco::Util::Option("mongoport", "m_port", "The port where mongodb is listening to")
             .required(false)
             .argument("mongoport")
-            .repeatable(false).group("mongo"));
+            .repeatable(false));
         options.addOption(
         Poco::Util::Option("mongodb", "m_db", "The name of the db")
             .required(false)
                 .argument("mongodb")
-                .repeatable(false).group("mongo"));
+                .repeatable(false));
         options.addOption(
         Poco::Util::Option("mongocoll", "m_coll", "The the name of the collection in 'mongodb' database")
             .required(false)
             .argument("mongocoll")
-            .repeatable(false).group("mongo"));
+            .repeatable(false));
+#endif
     }
 
     void handleOption(const std::string& name, const std::string& value)
@@ -176,11 +178,12 @@ protected:
             logger.setLevel(Message::PRIO_DEBUG);
         }else if(name=="help"){
             m_helpRequested = true;
-        }
-        else if(name=="file"){
+        }else if(name=="file"){
             _filename = value;
             logger.debug("Filename: "+value);
-        }else if(name=="mongoip"){
+        }
+#ifdef __WITH_MONGO__
+        else if(name=="mongoip"){
             _mongo_ip = value;
             logger.debug("Mongo IP: "+value);
         }else if(name=="mongoport"){
@@ -193,13 +196,15 @@ protected:
             _mongo_collection = value;
             logger.debug("Mongo collection name: "+value);
         }
+#endif
     }
 
     void handleMode(const std::string& name, const std::string& value)
     {
-    //!\param name is a string with the option name.
-    //!\param value is a string with the value.
-        if(!value.compare("file")) _data_mode = false; else _data_mode = true; //0->file 1->mongodb
+        //!\param name is a string with the option name.
+        //!\param value is a string with the value.
+        if(!value.compare("file")) _data_mode = false;
+        else _data_mode = true; //0->file 1->mongodb
         logger.information("Data fetching mode: "+value);
     }
 
@@ -217,8 +222,17 @@ protected:
         //! Display the result of -h option
         Poco::Util::HelpFormatter helpFormatter(options());
         helpFormatter.setCommand(commandName());
-        helpFormatter.setUsage("HpfeedsBroker -p port");
-        helpFormatter.setHeader("HpfeedsBroker is a hpfeeds messages Broker.");
+#ifdef __WITH_MONGO__
+        helpFormatter.setUsage("HpfeedsBroker can run in two modes: \n"
+                "-m file    [Fetch users authentication datas from a structured file]\n"
+                "-m mongodb [Fetch users authentication datas from mongodb collection]\n\n"
+                "If not specified the broker fetch data from a file named 'auth_keys.dat'\n");
+#else
+        helpFormatter.setUsage("HpfeedsBroker is running in file mode: \n"
+                " broker fetch users authentication datas from a structured file\n\n"
+                "If not specified the broker fetch data from a file named 'auth_keys.dat'\n");
+#endif
+        helpFormatter.setHeader("HpfeedsBroker is a hpfeeds messages broker.");
         helpFormatter.format(std::cout);
     }
 
@@ -233,9 +247,14 @@ protected:
 
             //Create File manager
             try{
+            #ifdef __WITH_MONGO__
                 if(!_data_mode) _data_manager = new DataManager(_filename);
                 else _data_manager = new DataManager(_mongo_ip,_mongo_port,
-                                                      _mongo_db,_mongo_collection);
+                                                    _mongo_db,_mongo_collection);
+            #else
+                _data_manager = new DataManager(_filename);
+            #endif
+
             }catch(Poco::Exception& exc){
                 logger.error(exc.displayText());
                 return Poco::Util::ServerApplication::EXIT_IOERR;

@@ -36,7 +36,7 @@ DataManager::DataManager( string filename):
     _input.close();
     _logger.debug("Data fetching from file completed!");
 }
-
+#ifdef __WITH_MONGO__
 DataManager::DataManager(const string mongo_ip, const string mongo_port,
                             const string mongo_db, const string mongo_collection):
  _logger(Logger::get("HF_Broker")), _mode(true), _mongoip(mongo_ip),
@@ -49,7 +49,7 @@ DataManager::DataManager(const string mongo_ip, const string mongo_port,
     _logger.debug("Mongo DB: "+_mongo_db);
     _logger.debug("Mongo Collection: "+_mongo_collection);
     _conn.connect(_mongoip);
-    _logger.debug("Connected with mongodb");
+    _logger.information("Connected with mongodb");
 
     auto_ptr<mongo::DBClientCursor> cursor =
             _conn.query(_mongo_db+"."+_mongo_collection);
@@ -70,6 +70,7 @@ DataManager::DataManager(const string mongo_ip, const string mongo_port,
     }
     _logger.information("Data fetching from mongodb completed!");
 }
+#endif
 
 DataManager::~DataManager() {}
 

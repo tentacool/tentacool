@@ -3,13 +3,16 @@
 
 #include <vector>
 #include <map>
+#include <set>
 #include <string>
 #include <fstream>
 #include <stdio.h>
 #include <iostream>
 #include <Poco/Message.h>
 #include <Poco/Logger.h>
+#ifdef __WITH_MONGO__
 #include "mongo/client/dbclient.h"
+#endif
 
 using namespace std;
 using namespace Poco;
