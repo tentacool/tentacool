@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include "Poco/Random.h"
 
+//! Authenticate an user by challenge authentication (SHA1 of the password and a nonce)
 class Authenticator{
-	//! This class have to authenticate an user by challenge authentication (SHA1 of the password and a nonce)
     Poco::Random _prng;
     uint32_t _nonce;
 public:
@@ -16,8 +16,7 @@ public:
 
     ~Authenticator();
 
-    //! Gets a nonce for the challenge. This starts the authentication routine
-    //! for the client
+    //! Gets a nonce for the challenge
     const uint32_t genNonce();
 
     //! Nonce getter

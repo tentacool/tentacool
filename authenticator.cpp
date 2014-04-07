@@ -26,13 +26,7 @@ const uint32_t Authenticator::genNonce()
 
 bool Authenticator::authenticate(string hash, string password)
 {
-    //! Authenticate a Client by the hash received by the broker
-    //  and the password
-    //
-    //string password = "none";
-
     Poco::DigestEngine::Digest d(hash.begin(), hash.end());
-
     Poco::SHA1Engine sha1;
     sha1.update((unsigned char*)&_nonce, 4);
     sha1.update(password.data(), password.size());

@@ -6,11 +6,12 @@
 
 using namespace Poco;
 
+//!File Constructor
+//!\brief Initialize the users data structures reading from file
+//!\param filename
 DataManager::DataManager( string filename):
-    _logger(Logger::get("HF_Broker")), _mode(false), _filename(filename) {
-    //!
-    //!\brief Initialize the users data structures reading from file
-    //!\param filename (with absolute path)
+    _logger(Logger::get("HF_Broker")), _mode(false), _filename(filename)
+{
     _input.open(_filename.c_str());
     if(!_input) throw Poco::Exception("Error opening the file");
     string line = "";
@@ -37,6 +38,12 @@ DataManager::DataManager( string filename):
     _logger.debug("Data fetching from file completed!");
 }
 #ifdef __WITH_MONGO__
+//!File Constructor
+//!\brief Initialize the users data structures extracting datas from a Mongodb collection
+//!\param Mongo IP
+//!\param Mongo Port
+//!\param Mongo DB name
+//!\param Mongo Collection name
 DataManager::DataManager(const string mongo_ip, const string mongo_port,
                             const string mongo_db, const string mongo_collection):
  _logger(Logger::get("HF_Broker")), _mode(true), _mongoip(mongo_ip),

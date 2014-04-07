@@ -12,11 +12,11 @@
 using namespace std;
 using namespace Poco;
 
-string HpfeedsBrokerConnection::Broker_name = "@hp1";
+string BrokerConnection::Broker_name = "@hp1";
 
-MessageRouter HpfeedsBrokerConnection::_router;
+MessageRouter BrokerConnection::_router;
 
-HpfeedsBrokerConnection::HpfeedsBrokerConnection(const Net::StreamSocket& s, DataManager* data_manager) :
+BrokerConnection::BrokerConnection(const Net::StreamSocket& s, DataManager* data_manager) :
     Net::TCPServerConnection(s),
     _sock(this->socket()),
     _logger(Poco::Logger::get("HF_Broker")),
@@ -30,12 +30,12 @@ HpfeedsBrokerConnection::HpfeedsBrokerConnection(const Net::StreamSocket& s, Dat
     message_sizes[OP_UNSUBSCRIBE] = 5+2+256*2;
 }
 
-inline string HpfeedsBrokerConnection::ip()
+inline string BrokerConnection::ip()
 {
     return _sock.peerAddress().host().toString();
 }
 
-void HpfeedsBrokerConnection::run()
+void BrokerConnection::run()
 {
     _sock = this->socket();
     _logger.information("New connection from: "+this->ip());
@@ -44,6 +44,7 @@ void HpfeedsBrokerConnection::run()
     bool isOpen = true;
     Poco::Timespan timeOut(10, 0); //sec, usec
     int nbytes;
+    uint32_t how_much_read; //total_lenght+opcode+name_lenght+channel_lenght
     hpf_msg_t *msg;
 
     // Start the authentication phase
@@ -67,7 +68,7 @@ void HpfeedsBrokerConnection::run()
                 //This is the total lenght, so it must be < MAXBUF - HEADER = DATA
                 memcpy(&total_length,_inBuffer,sizeof(uint32_t));
                 //_header_len = reinterpret_cast<uint32_t*>(_inBuffer);
-                cout<<ntohl(total_length)<<endl;
+                //cout<<ntohl(total_length)<<endl;
                 if(ntohl(total_length) > MAXBUF){
                     //Prevent Buffer Overflow
                     _logger.error("Oversized Message -> Bad client");
@@ -108,12 +109,18 @@ void HpfeedsBrokerConnection::run()
                         switch (int(msg->hdr.opcode)) {
                             case OP_SUBSCRIBE: ////////// SUBSCRIBE //////////
                             {
+                                how_much_read = 4+1+1;
                                 _logger.debug("I've got a subscription...");
                                 try{
                                     //Get the name
                                     hpf_chunk_t *name = hpf_msg_get_chunk((u_char*)msg->data, msg->data[0]);
                                     string s_name((char*)name->data,name->len);
-
+                                    how_much_read += s_name.length();
+                                    if(how_much_read>=ntohl(msg->hdr.msglen)){
+                                        sendErrorMsg("Invalid message -> Bad Client");
+                                        how_much_read = 0;
+                                        break;
+                                    }
                                     //Get the channelname
                                     string s_channel((char*)(name+1+name->len),
                                             ntohl(msg->hdr.msglen)- sizeof(msg->hdr)-1-name->len);
@@ -126,6 +133,7 @@ void HpfeedsBrokerConnection::run()
                                         _logger.debug("Sending ERROR message to the client...");
                                         _sock.sendBytes(msg, ntohl(msg->hdr.msglen));
                                         hpf_msg_delete(msg);
+                                        how_much_read = 0;
                                         _state = S_ERROR;
                                         break;
                                         // If fails to one subscribe,
@@ -133,23 +141,38 @@ void HpfeedsBrokerConnection::run()
                                     }
                                     _router.subscribe(s_channel,&_sock);
                                     _state = S_SUBSCRIBED;
+                                    how_much_read = 0;
                                 }catch(Poco::Exception& e){
                                     hpf_msg_delete(msg);
                                     _logger.error("!!!"+e.displayText());
+                                    how_much_read = 0;
                                 }
                                 break;
                             }
                             case OP_PUBLISH: ////////// PUBLISH //////////
+                                how_much_read = 4+1+1+1;
                                 _logger.debug("I've got a publish...");
                                 hpf_msg_t *pub_msg;
                                 try{
                                     //Get the name
                                     hpf_chunk_t *name = hpf_msg_get_chunk((u_char*)msg->data, msg->data[0]);
                                     string s_name((char*)name->data,name->len);
+                                    how_much_read += s_name.length();
+                                    if(how_much_read>=ntohl(msg->hdr.msglen)){
+                                        sendErrorMsg("Invalid message -> Bad Client");
+                                        how_much_read = 0;
+                                        break;
+                                    }
 
                                     //Get the channelname
                                     hpf_chunk_t *channel = hpf_msg_get_chunk((u_char*)(name+1+name->len), ((u_char*)(name+1+name->len))[0]);
                                     string s_channel((char*)channel->data,channel->len);
+                                    how_much_read += s_channel.length();
+                                    if(how_much_read>=ntohl(msg->hdr.msglen)){
+                                        sendErrorMsg("Invalid message -> Bad Client");
+                                        how_much_read = 0;
+                                        break;
+                                    }
 
                                     if(!_data_manager->may_publish(s_name,s_channel)){
                                         //The client can't publish to the specified channel
@@ -160,6 +183,7 @@ void HpfeedsBrokerConnection::run()
                                         _sock.sendBytes(msg, ntohl(msg->hdr.msglen));
                                         hpf_msg_delete(msg);
                                         _state = S_ERROR;
+                                        how_much_read = 0;
                                         break;
                                     }
                                     //Get the payload
@@ -170,10 +194,12 @@ void HpfeedsBrokerConnection::run()
                                     _router.publish(s_channel,&_sock,(u_char*)pub_msg,ntohl(pub_msg->hdr.msglen));
                                     //free pointers
                                     hpf_msg_delete(pub_msg);
+                                    how_much_read = 0;
                                 }catch(Poco::Exception& e){
-                                    hpf_msg_delete(msg);
-                                    hpf_msg_delete(pub_msg);
                                     _logger.error(e.displayText());
+                                    hpf_msg_delete(msg);
+                                    how_much_read = 0;
+                                    hpf_msg_delete(pub_msg);
                                 }
                                 break;
                             default:
@@ -197,11 +223,22 @@ void HpfeedsBrokerConnection::run()
     }
 }
 
-void HpfeedsBrokerConnection::authUser()
+void BrokerConnection::sendErrorMsg(string msg)
+{
+    _logger.error(msg);
+    hpf_msg_t *m;
+    m = hpf_msg_error(msg);
+    _logger.debug("Sending ERROR message to the client...");
+    _sock.sendBytes(m, ntohl(m->hdr.msglen));
+    hpf_msg_delete(m);
+    _state = S_ERROR;
+}
+
+void BrokerConnection::authUser()
 {
     hpf_chunk_t *chunk;
     hpf_msg_t* msg = (hpf_msg_t *)_inBuffer;
-
+    uint32_t how_much_read = 4+1+1; //total_lenght + opcode+ name length
 
     if (msg->hdr.opcode != OP_AUTH) {
         _logger.information("Unexpected message: "+ NumberFormatter::format(msg->hdr.opcode));
@@ -219,8 +256,22 @@ void HpfeedsBrokerConnection::authUser()
         ntohl(msg->hdr.msglen) - sizeof(msg->hdr));
 
     string username((char*)chunk->data, chunk->len);
+    how_much_read += username.length();
+    if(how_much_read>=ntohl(msg->hdr.msglen)){
+        _logger.error("Invalid Message -> Bad client");
+        _state = S_ERROR;
+        hpf_msg_delete(msg);
+        return;
+    }
     string hash(_inBuffer + sizeof(msg->hdr) + 1 + chunk->len,
         int(ntohl(msg->hdr.msglen) - sizeof(msg->hdr) - 1 - chunk->len));
+
+    if(hash.length()<20){ //no valid hash
+        _logger.error("Invalid Message -> Bad client");
+        _state = S_ERROR;
+        hpf_msg_delete(msg);
+        return;
+    }
 
     _logger.information("Getting authorization request for "+username);
     try{
@@ -246,7 +297,7 @@ void HpfeedsBrokerConnection::authUser()
     }
 }
 
-HpfeedsBrokerConnection::~HpfeedsBrokerConnection()
+BrokerConnection::~BrokerConnection()
 {
     if(_state==S_SUBSCRIBED)_router.unsubscribe(&_sock);
     _logger.information("Closed connection from: "+this->ip());

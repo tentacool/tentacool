@@ -12,10 +12,11 @@
 
 typedef std::string Channel;
 typedef Poco::Net::StreamSocket* StreamSocketPtr;
-typedef SafeSet<StreamSocketPtr> StreamSocketPtrSet;   //Here i'm using my own thread_safe set
-//typedef SafeContainer<StreamSocketPtr,set<StreamSocketPtr>> StreamSocketPtrSet;   //Here i'm using my own thread_safe set
+typedef SafeSet<StreamSocketPtr> StreamSocketPtrSet;   //Here I'm using my own thread_safe set
 typedef std::map<Channel, StreamSocketPtrSet> ChannelMap;
 
+//! MessageRouter main work is deliver publish messages through channels and
+//! gave it to the users who registered to them
 class MessageRouter {
     //! Container for all client, divided by channel
     ChannelMap _channels;
@@ -23,8 +24,8 @@ class MessageRouter {
     //! The Poco Logger
     Poco::Logger& _logger;
 
-    //! Map rw_lock mutex
-    rw_lock_t _map_mutex;
+    //! Map ReadWriteLock mutex
+    ReadWriteLock _map_mutex;
 public:
     //! Constructor
     MessageRouter();

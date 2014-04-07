@@ -48,22 +48,23 @@ public:
 
     Poco::Net::TCPServerConnection* createConnection(const Poco::Net::StreamSocket& socket)
     {
-        return new HpfeedsBrokerConnection(socket, _data_m);
+        return new BrokerConnection(socket, _data_m);
     }
 
 private:
     DataManager*    _data_m;
 };
+
 //!
-//!To test the HpfeedsBrokerApplication you can use any terminal with "telnet localhost 10000".
+//!To test the BrokerApplication you can use any terminal with "telnet localhost 10000".
 //!10000 is the default port.
 //!NOTE: Currently the SimpleFileChannel use is commented, so messages goes through std output
 
-class HpfeedsBrokerApplication : public Poco::Util::ServerApplication
+class BrokerApplication : public Poco::Util::ServerApplication
 {
 public:
 
-    HpfeedsBrokerApplication() :
+    BrokerApplication() :
         m_helpRequested(false), _debug_mode(false)
         , logger(Logger::get("HF_Broker"))
         , port(10000), num_threads(10), queuelen(20), idletime(100)
@@ -71,6 +72,8 @@ public:
         , _mongo_ip("127.0.0.1"), _mongo_port("27017")
         , _mongo_db("hpfeeds"), _mongo_collection("auth_key")
     {
+
+        BrokerConnection::Broker_name="@hp1";
         //! Constructor - create the log FileChannel e the formatting
         AutoPtr<SimpleFileChannel> sfChannel(new SimpleFileChannel);
         sfChannel->setProperty("path", "hpfeedsBroker.log");
@@ -86,9 +89,9 @@ public:
         //logger.setChannel(sfFC); //Uncomment to set the logging to the file
     }
 
-        ~HpfeedsBrokerApplication()
+        ~BrokerApplication()
     {   //! Destructor
-            logger.information("HpfeedsBroker shutting down");
+            if(!m_helpRequested)logger.information("HpfeedsBroker shutting down");
     }
 
 protected:
@@ -106,8 +109,7 @@ protected:
 
     void defineOptions(Poco::Util::OptionSet& options)
     {
-        //!
-        // Define the application options
+        //! Define the application options
         //\param options is a Poco::Util::OptionSet&.
         Poco::Util::ServerApplication::defineOptions(options);
 
@@ -115,9 +117,16 @@ protected:
         Poco::Util::Option("help", "h", "display help information on command line arguments")
             .required(false)
             .repeatable(false));
+
         options.addOption(
         Poco::Util::Option("debug", "d", "active the debug informations printing")
             .required(false)
+            .repeatable(false));
+
+        options.addOption(
+        Poco::Util::Option("broker_name", "n", "give a name to the broker (@hp1 default)")
+            .required(false)
+            .argument("broker_name")
             .repeatable(false));
 
         options.addOption(
@@ -125,8 +134,8 @@ protected:
             .required(false)
             .argument("port")
             .validator(new Util::IntValidator(1024, 65535))
-            .callback(Poco::Util::OptionCallback<HpfeedsBrokerApplication>
-                (this, &HpfeedsBrokerApplication::handlePort)));
+            .callback(Poco::Util::OptionCallback<BrokerApplication>
+                (this, &BrokerApplication::handlePort)));
 
         options.addOption(
         Poco::Util::Option("file", "f", "filename where fetch the authentication data")
@@ -140,8 +149,8 @@ protected:
             .required(false)
             .argument("mode")
             .validator(new Util::RegExpValidator("file|mongodb"))
-            .callback(Poco::Util::OptionCallback<HpfeedsBrokerApplication>
-                (this, &HpfeedsBrokerApplication::handleMode)));
+            .callback(Poco::Util::OptionCallback<BrokerApplication>
+                (this, &BrokerApplication::handleMode)));
 
         options.addOption(
         Poco::Util::Option("mongoip", "m_ip", "The IP address of the mongodb")
@@ -168,7 +177,7 @@ protected:
 
     void handleOption(const std::string& name, const std::string& value)
     {
-        //!
+        //! Handle the option values
         //\param name is a string with the option name.
         //\param value is a string with the value.
         Poco::Util::ServerApplication::handleOption(name, value);
@@ -181,6 +190,9 @@ protected:
         }else if(name=="file"){
             _filename = value;
             logger.debug("Filename: "+value);
+        }else if(name=="broker_name"){
+            BrokerConnection::Broker_name = value;
+            logger.debug("Broker name: "+value);
         }
 #ifdef __WITH_MONGO__
         else if(name=="mongoip"){
@@ -213,7 +225,7 @@ protected:
         //!
         //!\param name is a string with the option name.
         //!\param value is a string with the value.
-        port = (unsigned short) config().getInt("HpfeedsBrokerApplication.port",
+        port = (unsigned short) config().getInt("BrokerApplication.port",
                 NumberParser::parseUnsigned(value));
         logger.information("HpfeedsBroker port setted to "+NumberFormatter::format(port));
     }
@@ -224,13 +236,15 @@ protected:
         helpFormatter.setCommand(commandName());
 #ifdef __WITH_MONGO__
         helpFormatter.setUsage("HpfeedsBroker can run in two modes: \n"
+                "-n name    [Give a specific name to the broker - default '@hp1']\n"
                 "-m file    [Fetch users authentication datas from a structured file]\n"
                 "-m mongodb [Fetch users authentication datas from mongodb collection]\n\n"
                 "If not specified the broker fetch data from a file named 'auth_keys.dat'\n");
 #else
         helpFormatter.setUsage("HpfeedsBroker is running in file mode: \n"
                 " broker fetch users authentication datas from a structured file\n\n"
-                "If not specified the broker fetch data from a file named 'auth_keys.dat'\n");
+                "If not specified the broker fetch data from a file named 'auth_keys.dat'\n"
+                "-n name    [Give a specific name to the broker - default '@hp1']\n");
 #endif
         helpFormatter.setHeader("HpfeedsBroker is a hpfeeds messages broker.");
         helpFormatter.format(std::cout);
@@ -238,6 +252,7 @@ protected:
 
     int main(const std::vector<std::string>& args)
     {
+        try{
         //! Main
         if(m_helpRequested){
             displayHelp();
@@ -282,6 +297,10 @@ protected:
 
             server.stop();
         }
+        }catch(exception& e){
+            logger.information(e.what());
+            return Poco::Util::Application::EXIT_IOERR;
+        }
         return Poco::Util::Application::EXIT_OK;
     }
 
@@ -304,4 +323,4 @@ private:
 //----------------------------------------
 //	FeedsBrokerApplication main
 //----------------------------------------
-POCO_SERVER_MAIN(HpfeedsBrokerApplication)
+POCO_SERVER_MAIN(BrokerApplication)

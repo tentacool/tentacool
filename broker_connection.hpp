@@ -9,7 +9,6 @@
 #include "authenticator.hpp"
 #include "data_manager.hpp"
 
-
 #define DATA 10*1024*1024 //10MB
 #define MAXBUF DATA+5 //5 is the common header for all messages (msg_lenght (4) + opcode (1))
 
@@ -35,10 +34,19 @@ typedef enum {
 //! This Map has the max size of every message type (op_code)
 static map<int, uint32_t> message_sizes;
 
-class HpfeedsBrokerConnection : public Poco::Net::TCPServerConnection {
+//! BrokerConnection managed the main logic of the broker
+class BrokerConnection : public Poco::Net::TCPServerConnection {
     //! Reference to the client socket
     Poco::Net::StreamSocket& _sock; ///! Reference to the client socket
-
+public:
+    //! Constructor
+    BrokerConnection(const Poco::Net::StreamSocket& s, DataManager* data_manager);
+    //! Destructor
+    ~BrokerConnection();
+    void run();     //!< Client management main routine
+    inline std::string ip();    //!< The ip of the peer
+    static string Broker_name;  //!< Hpfeeds Broker server name
+private:
     //! The message router
     static MessageRouter _router;
 
@@ -59,21 +67,9 @@ class HpfeedsBrokerConnection : public Poco::Net::TCPServerConnection {
 
     //! Authenticate the user exploiting the Authenticator
     void authUser();
-public:
-    //! Constructor
-    HpfeedsBrokerConnection(const Poco::Net::StreamSocket& s, DataManager* data_manager);
 
-    //! Destructor
-    ~HpfeedsBrokerConnection();
-
-    //! Client management main routine
-    void run();
-
-    //! The ip of the peer
-    inline std::string ip();
-
-    //! Hpfeeds Broker server name
-	static string Broker_name;
+    //! Send an error message to the client
+    void sendErrorMsg(const string msg);
 };
 
 #endif

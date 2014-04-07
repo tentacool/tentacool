@@ -3,7 +3,11 @@
 
 #include <pthread.h>
 
-class rw_lock_t
+//!
+//! This is an implementation of a read/write lock.
+//! It's useful in our case because read accesses to shared data are much more
+//! frequent than write accesses.
+class ReadWriteLock
 {
     int NoOfReaders, NoOfWriters, NoOfWritersWaiting;
     pthread_mutex_t class_mutex;
@@ -11,12 +15,12 @@ class rw_lock_t
     pthread_cond_t  writer_gate;
 
 public:
-    rw_lock_t();
-    virtual ~rw_lock_t();
-    void r_lock();
-    void w_lock();
-    void r_unlock();
-    void w_unlock();
+    ReadWriteLock();
+    virtual ~ReadWriteLock();
+    void r_lock();      //!< Get read lock
+    void w_lock();      //!< Get write lock
+    void r_unlock();    //!< Release read lock
+    void w_unlock();    //!< Release write lock
 };
 
 #endif /* __RW_LOCK_T__ */

@@ -18,17 +18,16 @@ using namespace std;
 //! Struct representing an hpfeeds message
 typedef struct {
     struct {
-        //! Struct representing an hpfeeds message header
-        u_int32_t msglen;
-        u_int8_t opcode;
+        u_int32_t msglen;   //!< Total message lenght
+        u_int8_t opcode;    //!< Message OP_CODE
     }  __attribute__((__packed__)) hdr;
-    u_char data[]; //!< Data
+    u_char data[]; //!< Data payload
 } hpf_msg_t;
 
+//! Struct representing a chunk of data carried by a hpfeeds message
 typedef struct {
-    //! Struct representing a chunk of data carried by a hpfeeds message
-    u_char len;
-    u_char data[]; //!< Data
+    u_char len;     //!< Chunk lenght
+    u_char data[];  //!< Data payload
 } hpf_chunk_t;
 
 hpf_msg_t *hpf_msg_new()

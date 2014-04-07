@@ -10,7 +10,7 @@ using namespace std;
 //! of read/write lock mutex
 template <class T> class SafeSet {
 
-    /*static*/ rw_lock_t _mutex;
+    /*static*/ ReadWriteLock _mutex;
     set<T> _unsafe_set;
     typedef std::set<T> set_t;
 

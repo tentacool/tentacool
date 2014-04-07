@@ -15,7 +15,8 @@ MessageRouter::MessageRouter() :
 
 void MessageRouter::subscribe(Channel channel, StreamSocketPtr client)
 {
-    _logger.information("Subscribe request on channel "+channel+" for "+client->peerAddress().host().toString());
+    _logger.information("Subscribe request on channel "+
+            channel+" for "+client->peerAddress().host().toString());
 
     _map_mutex.r_lock();
     StreamSocketPtrSet& channelset = _channels[channel];
@@ -27,7 +28,8 @@ void MessageRouter::subscribe(Channel channel, StreamSocketPtr client)
         channelset.insert(client);
         _map_mutex.w_unlock();
     }
-    _logger.debug("Channel "+channel+" has "+Poco::NumberFormatter::format(channelset.size())+" subscribers");
+    _logger.debug("Channel "+channel+" has "+
+            Poco::NumberFormatter::format(channelset.size())+" subscribers");
 }
 
 void MessageRouter::unsubscribe(StreamSocketPtr client)
@@ -46,10 +48,12 @@ void MessageRouter::unsubscribe(StreamSocketPtr client)
     _map_mutex.w_unlock();
 }
 
-void MessageRouter::publish(Channel channel, StreamSocketPtr caller, u_char* message, uint32_t len)
+void MessageRouter::publish(Channel channel, StreamSocketPtr caller,
+        u_char* message, uint32_t len)
 {
     //cout<<"II: "+string((char*)message,len)<<endl;
-    _logger.information("Publishing message from "+caller->peerAddress().host().toString()+" on "+channel);
+    _logger.information("Publishing message from "+
+            caller->peerAddress().host().toString()+" on "+channel);
 
     _map_mutex.r_lock();
     StreamSocketPtrSet& channelset = _channels[channel];
