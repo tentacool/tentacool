@@ -40,7 +40,7 @@ hpf_msg_t *hpf_msg_new()
 
 void hpf_msg_delete(hpf_msg_t *m)
 {
-    if (m) free(m);
+    if (m) delete(m);
     return;
 }
 

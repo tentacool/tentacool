@@ -11,9 +11,11 @@
 #include <Poco/Message.h>
 #include <Poco/Logger.h>
 #include <Poco/Channel.h>
+#include <Poco/ConsoleChannel.h>
 #include <Poco/SimpleFileChannel.h>
 #include <Poco/Formatter.h>
 #include <Poco/FormattingChannel.h>
+#include <Poco/SplitterChannel.h>
 #include <Poco/PatternFormatter.h>
 #include <Poco/AutoPtr.h>
 #include <Poco/Util/ServerApplication.h>
@@ -68,25 +70,13 @@ public:
         m_helpRequested(false), _debug_mode(false)
         , logger(Logger::get("HF_Broker"))
         , port(10000), num_threads(10), queuelen(20), idletime(100)
-        , _data_mode(false), _filename("auth_keys.dat")
+        , _data_mode(false), _file_logging(false)
+        , _log_file("hpfeedsBroker.log"), _filename("auth_keys.dat")
         , _mongo_ip("127.0.0.1"), _mongo_port("27017")
         , _mongo_db("hpfeeds"), _mongo_collection("auth_key")
     {
-
+        //Default broker name
         BrokerConnection::Broker_name="@hp1";
-        //! Constructor - create the log FileChannel e the formatting
-        AutoPtr<SimpleFileChannel> sfChannel(new SimpleFileChannel);
-        sfChannel->setProperty("path", "hpfeedsBroker.log");
-        sfChannel->setProperty("rotation", "2 K"); //Overwrite file at 2KB
-
-        AutoPtr<PatternFormatter> sfPF(new PatternFormatter);
-        sfPF->setProperty("pattern", "[Th. %I] %Y-%m-%d %H:%M:%S [%p] %s: %t");
-
-        AutoPtr<FormattingChannel> sfFC(new FormattingChannel(sfPF, sfChannel));
-
-        //Set priority at least for INFO messages
-        logger.setLevel(Message::PRIO_INFORMATION);
-        //logger.setChannel(sfFC); //Uncomment to set the logging to the file
     }
 
         ~BrokerApplication()
@@ -120,6 +110,11 @@ protected:
 
         options.addOption(
         Poco::Util::Option("debug", "d", "active the debug informations printing")
+            .required(false)
+            .repeatable(false));
+
+        options.addOption(
+        Poco::Util::Option("log_file", "l", "write broker output in a log file")
             .required(false)
             .repeatable(false));
 
@@ -187,6 +182,8 @@ protected:
             logger.setLevel(Message::PRIO_DEBUG);
         }else if(name=="help"){
             m_helpRequested = true;
+        }else if(name=="log_file"){
+            _file_logging = true;
         }else if(name=="file"){
             _filename = value;
             logger.debug("Filename: "+value);
@@ -260,6 +257,26 @@ protected:
             string d("");
             if(_debug_mode)d="[DEBUG_LOGGING_MODE]";
 
+            //Setting Logger
+            AutoPtr<SimpleFileChannel> sfChannel(new SimpleFileChannel);
+            sfChannel->setProperty("path", _log_file);
+            sfChannel->setProperty("rotation", "2 K"); //Overwrite file at 2KB
+            AutoPtr<PatternFormatter> sfPF(new PatternFormatter);
+            sfPF->setProperty("pattern", "[Th. %I] %Y-%m-%d %H:%M:%S [%p] %s: %t");
+
+            AutoPtr<FormattingChannel> sfFC(new FormattingChannel(sfPF, sfChannel));
+            AutoPtr<ConsoleChannel> cc (new ConsoleChannel());
+
+            AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
+
+            pSplitter->addChannel(cc);
+            if(_file_logging) pSplitter->addChannel(sfFC);
+
+            logger.setChannel(pSplitter);
+
+            //Set priority at least for INFO messages
+            logger.setLevel(Message::PRIO_INFORMATION);
+
             //Create File manager
             try{
             #ifdef __WITH_MONGO__
@@ -269,7 +286,6 @@ protected:
             #else
                 _data_manager = new DataManager(_filename);
             #endif
-
             }catch(Poco::Exception& exc){
                 logger.error(exc.displayText());
                 return Poco::Util::ServerApplication::EXIT_IOERR;
@@ -312,6 +328,8 @@ private:
     int queuelen;
     int idletime;
     bool _data_mode;
+    bool _file_logging;
+    string _log_file;
     string _filename;
     string _mongo_ip;
     string _mongo_port;

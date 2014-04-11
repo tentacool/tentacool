@@ -67,11 +67,10 @@ void BrokerConnection::run()
                 nbytes = _sock.receiveBytes(_inBuffer, sizeof(uint32_t));
                 //This is the total lenght, so it must be < MAXBUF - HEADER = DATA
                 memcpy(&total_length,_inBuffer,sizeof(uint32_t));
-                //_header_len = reinterpret_cast<uint32_t*>(_inBuffer);
-                //cout<<ntohl(total_length)<<endl;
                 if(ntohl(total_length) > MAXBUF){
                     //Prevent Buffer Overflow
-                    _logger.error("Oversized Message -> Bad client");
+                    //_logger.error("Oversized Message -> Bad client");
+                    sendErrorMsg("Oversized Message -> Bad client");
                     isOpen = false;
                     break;
                 }
@@ -103,6 +102,7 @@ void BrokerConnection::run()
                         if(ntohl(msg->hdr.msglen)>message_sizes[int(msg->hdr.opcode)]){
                             //If the message is too long for its type
                             _logger.error("Oversized Message -> Bad client");
+                            sendErrorMsg("Oversized Message -> Bad client"); //??
                             isOpen = false;
                             return;
                         }
@@ -128,13 +128,8 @@ void BrokerConnection::run()
                                     if(!_data_manager->may_subscribe(s_name,s_channel)){
                                         //The client can't subscribe to the specified channel
                                         _logger.information(s_name+" cannot subscribe to "+s_channel);
-                                        string err = "accessfail";
-                                        msg = hpf_msg_error(err);
-                                        _logger.debug("Sending ERROR message to the client...");
-                                        _sock.sendBytes(msg, ntohl(msg->hdr.msglen));
-                                        hpf_msg_delete(msg);
+                                        sendErrorMsg("accessfail");
                                         how_much_read = 0;
-                                        _state = S_ERROR;
                                         break;
                                         // If fails to one subscribe,
                                         // I have also to unsubscribe the user to the other
@@ -149,10 +144,10 @@ void BrokerConnection::run()
                                 }
                                 break;
                             }
-                            case OP_PUBLISH: ////////// PUBLISH //////////
+                            case OP_PUBLISH:{ ////////// PUBLISH //////////
                                 how_much_read = 4+1+1+1;
                                 _logger.debug("I've got a publish...");
-                                hpf_msg_t *pub_msg;
+                                hpf_msg_t *pub_msg = NULL;
                                 try{
                                     //Get the name
                                     hpf_chunk_t *name = hpf_msg_get_chunk((u_char*)msg->data, msg->data[0]);
@@ -177,12 +172,7 @@ void BrokerConnection::run()
                                     if(!_data_manager->may_publish(s_name,s_channel)){
                                         //The client can't publish to the specified channel
                                         _logger.information(s_name+" cannot publish to "+s_channel);
-                                        string err = "accessfail";
-                                        msg = hpf_msg_error(err);
-                                        _logger.debug("Sending ERROR message to the client...");
-                                        _sock.sendBytes(msg, ntohl(msg->hdr.msglen));
-                                        hpf_msg_delete(msg);
-                                        _state = S_ERROR;
+                                        sendErrorMsg("accessfail");
                                         how_much_read = 0;
                                         break;
                                     }
@@ -202,14 +192,9 @@ void BrokerConnection::run()
                                     hpf_msg_delete(pub_msg);
                                 }
                                 break;
+                            }
                             default:
-                                string err = "Out of sequence message";
-                                _logger.error(err);
-                                msg = hpf_msg_error(err);
-                                _logger.debug("Sending ERROR message to the client...");
-                                _sock.sendBytes(msg, ntohl(msg->hdr.msglen));
-                                hpf_msg_delete(msg);
-                                _state = S_ERROR;
+                                sendErrorMsg("Out of sequence message");
                                 break;
                         }
                         break;
@@ -226,8 +211,7 @@ void BrokerConnection::run()
 void BrokerConnection::sendErrorMsg(string msg)
 {
     _logger.error(msg);
-    hpf_msg_t *m;
-    m = hpf_msg_error(msg);
+    hpf_msg_t *m = hpf_msg_error(msg);
     _logger.debug("Sending ERROR message to the client...");
     _sock.sendBytes(m, ntohl(m->hdr.msglen));
     hpf_msg_delete(m);
@@ -288,12 +272,7 @@ void BrokerConnection::authUser()
         }
     }catch(Poco::Exception& e){
         _logger.error(e.displayText());
-        string err = "accessfail";
-        msg = hpf_msg_error(err);
-        _logger.debug("Sending ERROR message to the client...");
-        _sock.sendBytes(msg, ntohl(msg->hdr.msglen));
-        hpf_msg_delete(msg);
-        _state = S_ERROR;
+        sendErrorMsg("accessfail");
     }
 }
 
