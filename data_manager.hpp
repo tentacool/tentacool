@@ -10,6 +10,11 @@
 #include <iostream>
 #include <Poco/Message.h>
 #include <Poco/Logger.h>
+
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #ifdef __WITH_MONGO__
 #include "mongo/client/dbclient.h"
 #endif

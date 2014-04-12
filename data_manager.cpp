@@ -1,7 +1,13 @@
 #include "data_manager.hpp"
 #include "Poco/StringTokenizer.h"
+#include "Poco/AutoPtr.h"
 #include <fstream>
 #include <exception>
+
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #define MAX_FIELD_LENGTH 256
 
 using namespace Poco;

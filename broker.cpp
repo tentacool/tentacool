@@ -33,6 +33,10 @@
 #include "broker_connection.hpp"
 #include "data_manager.hpp"
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 using namespace std;
 using namespace Poco;
 using Poco::AutoPtr;

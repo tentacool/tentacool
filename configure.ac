@@ -33,8 +33,14 @@ AC_CHECK_LIB([PocoUtil],[main],[],AC_MSG_ERROR([unable to find PocoUtil]))
 AC_ARG_WITH(mongoclient,
   AS_HELP_STRING([--with-mongoclient=DIR],[location of mongoclient]),
 [
-	CPPFLAGS="$CPPFLAGS -I${withval}/include/mongo/"
-	LDFLAGS="$LDFLAGS -L${withval}/lib"
+        if test "${withval}" != yes; then
+	        CPPFLAGS="$CPPFLAGS -I${withval}/include/mongo/client"
+	        LDFLAGS="$LDFLAGS -L${withval}/lib"
+        else
+                #no path 
+	        CPPFLAGS="$CPPFLAGS -I/usr/include/mongo/client"
+	        LDFLAGS="$LDFLAGS -L/usr/lib"
+        fi
 ],[with_mongoclient=no])
 
 #if you want mongodb support, I have to check it and the boost libraries
@@ -64,11 +70,23 @@ if test "x${with_mongoclient}" != xno; then
                 ])
         ])
 
+#        AC_MSG_CHECKING(for MongoClient headers)
+#	        AC_TRY_COMPILE([
+#		        #include "/mongo/client/dbclient.h"
+#		        ], using mongo;,
+#		        [AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no)
+#                                               AC_MSG_ERROR("unable to find MongoClient headers")])
+
+#        AC_MSG_CHECKING(for MongoClient headers)
+#        AC_CHECK_HEADER (/usr/include/mongo/client/dbclient.h, [], AC_MSG_ERROR("unable to find MongoClient headers"), [] )
+
+
         AC_CHECK_LIB([mongoclient],[main],[],AC_MSG_ERROR([unable to find MongoClient]))
         
         #Macro I check in the code
-        AC_DEFINE(__WITH_MONGO__,[],[MongoDB support])
+        AC_DEFINE(__WITH_MONGO__,1,[MongoDB support])
 fi
+
 
 
 
