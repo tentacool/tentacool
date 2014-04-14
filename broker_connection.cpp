@@ -95,6 +95,7 @@ void BrokerConnection::run()
                             isOpen = false;
                         }
                         break;
+                    case S_SUBSCRIBED: //Subscribed is also authenticated
                     case S_AUTHENTICATED:
                         msg = (hpf_msg_t *)_inBuffer;
                         cout << "OPCODE " << int(msg->hdr.opcode) << endl;
