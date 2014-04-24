@@ -1,11 +1,3 @@
-//============================================================================
-// Name        : broker.cpp
-// Author      : Aldo Mollica
-// Version     :
-// Copyright   : Your copyright notice
-// Description : Hpfeeds Broker in C++, Ansi-style
-//============================================================================
-
 #include <iostream>
 #include <Poco/String.h>
 #include <Poco/Message.h>
@@ -30,6 +22,7 @@
 #include "Poco/Net/TCPServer.h"
 #include "Poco/Net/TCPServerParams.h"
 #include "Poco/Net/TCPServerConnectionFactory.h"
+#include "broker.hpp"
 #include "broker_connection.hpp"
 #include "data_manager.hpp"
 
@@ -43,33 +36,16 @@ using Poco::AutoPtr;
 using Poco::Channel;
 using Poco::PatternFormatter;
 
-class TCPConnectionFactory : public Poco::Net::TCPServerConnectionFactory
+TCPConnectionFactory::TCPConnectionFactory(DataManager* data_m): _data_m(data_m)
+{}
+TCPConnectionFactory::~TCPConnectionFactory()
+{}
+Net::TCPServerConnection* TCPConnectionFactory::createConnection(const Poco::Net::StreamSocket& socket)
 {
-public:
-    TCPConnectionFactory(DataManager* data_m): _data_m(data_m)
-    {}
+    return new BrokerConnection(socket, _data_m);
+}
 
-    ~TCPConnectionFactory()
-    {}
-
-    Poco::Net::TCPServerConnection* createConnection(const Poco::Net::StreamSocket& socket)
-    {
-        return new BrokerConnection(socket, _data_m);
-    }
-
-private:
-    DataManager*    _data_m;
-};
-
-//!
-//!To test the BrokerApplication you can use any terminal with "telnet localhost 10000".
-//!10000 is the default port.
-
-class BrokerApplication : public Poco::Util::ServerApplication
-{
-public:
-
-    BrokerApplication() :
+BrokerApplication::BrokerApplication() :
         m_helpRequested(false), _debug_mode(false)
         , logger(Logger::get("HF_Broker"))
         , port(10000), num_threads(10), queuelen(20), idletime(100)
@@ -77,30 +53,32 @@ public:
         , _log_file("hpfeedsBroker.log"), _filename("auth_keys.dat")
         , _mongo_ip("127.0.0.1"), _mongo_port("27017")
         , _mongo_db("hpfeeds"), _mongo_collection("auth_key")
-    {
-        //Default broker name
-        BrokerConnection::Broker_name="@hp1";
-    }
+        , _data_manager(NULL)
+{
+    //Default broker name
+    BrokerConnection::Broker_name="@hp1";
+}
 
-        ~BrokerApplication()
-    {   //! Destructor
-            if(!m_helpRequested)logger.information("HpfeedsBroker shutting down");
-    }
+BrokerApplication::~BrokerApplication()
+{   //! Destructor
+    if(!m_helpRequested)logger.information("HpfeedsBroker shutting down");
+}
 
-protected:
-    void initialize(Poco::Util::Application& self)
+
+void BrokerApplication::initialize(Poco::Util::Application& self)
     {
         //! Load configuration file, if present, and initialize the application
         loadConfiguration(); // load default configuration files, if present
         Poco::Util::ServerApplication::initialize(self);
     }
 
-    void uninitialize()
+
+void BrokerApplication::uninitialize()
     {   //! Uninitialize the application
         Poco::Util::ServerApplication::uninitialize();
     }
 
-    void defineOptions(Poco::Util::OptionSet& options)
+void BrokerApplication::defineOptions(Poco::Util::OptionSet& options)
     {
         //! Define the application options
         //\param options is a Poco::Util::OptionSet&.
@@ -173,7 +151,7 @@ protected:
 #endif
     }
 
-    void handleOption(const std::string& name, const std::string& value)
+void BrokerApplication::handleOption(const std::string& name, const std::string& value)
     {
         //! Handle the option values
         //\param name is a string with the option name.
@@ -211,7 +189,7 @@ protected:
 #endif
     }
 
-    void handleMode(const std::string& name, const std::string& value)
+void BrokerApplication::handleMode(const std::string& name, const std::string& value)
     {
         //!\param name is a string with the option name.
         //!\param value is a string with the value.
@@ -220,7 +198,7 @@ protected:
         logger.information("Data fetching mode: "+value);
     }
 
-    void handlePort(const std::string& name, const std::string& value)
+void BrokerApplication::handlePort(const std::string& name, const std::string& value)
     {
         //!
         //!\param name is a string with the option name.
@@ -230,7 +208,7 @@ protected:
         logger.information("HpfeedsBroker port setted to " +
                 NumberFormatter::format(port));
     }
-    void displayHelp()
+void BrokerApplication::displayHelp()
     {
         //! Display the result of -h option
         Poco::Util::HelpFormatter helpFormatter(options());
@@ -251,7 +229,7 @@ protected:
         helpFormatter.format(std::cout);
     }
 
-    int main(const std::vector<std::string>& args)
+int BrokerApplication::main(const std::vector<std::string>& args)
     {
         try{
         //! Main
@@ -328,25 +306,7 @@ protected:
         return Poco::Util::Application::EXIT_OK;
     }
 
-private:
-    bool m_helpRequested, _debug_mode;
-    Logger& logger;
-    unsigned short port;
-    int num_threads;
-    int queuelen;
-    int idletime;
-    bool _data_mode;
-    bool _stdout_logging;
-    string _log_file;
-    string _filename;
-    string _mongo_ip;
-    string _mongo_port;
-    string _mongo_db;
-    string _mongo_collection;
-    DataManager* _data_manager;
-};
-
 //----------------------------------------
 //	FeedsBrokerApplication main
 //----------------------------------------
-POCO_SERVER_MAIN(BrokerApplication)
+//POCO_SERVER_MAIN(BrokerApplication)

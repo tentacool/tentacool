@@ -3,30 +3,36 @@
 
 #include <vector>
 #include <map>
+#include <set>
 #include <string>
 #include <fstream>
 #include <stdio.h>
 #include <iostream>
 #include <Poco/Message.h>
 #include <Poco/Logger.h>
+
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+#ifdef __WITH_MONGO__
 #include "mongo/client/dbclient.h"
+#endif
 
 using namespace std;
 using namespace Poco;
 
-//!
 //! Manage the data reading (name, auth_keys and publish/subscribe channels) from
-//! a file or a MongoDB collection
+// a file or a MongoDB collection
 class DataManager
 {
-
     typedef struct{
-        string secret;
-        set<string> _publish_chs;   //! Publish channels
-        set<string> _subscribe_chs; //! Subscribe channels
+        string secret;              //! User secret
+        set<string> _publish_chs;   //! Publish channels associated to the user
+        set<string> _subscribe_chs; //! Subscribe channels associated to the user
     }user_data;
 
-    typedef std::map<string,user_data> UserMap; //! Map<Channel Name, User Data>
+    typedef std::map<string,user_data> UserMap;
 
 public:
     //DataManager(); //! Dummy constructor
@@ -48,4 +54,4 @@ private:
     string _mongo_collection;
 };
 
-#endif /* __DATAMANAGER__ */
+#endif

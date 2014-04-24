@@ -10,10 +10,10 @@
 #include "safe_set.hpp"
 #include "rw_lock_t.hpp"
 
-typedef std::string Channel;
+typedef std::string HPChannel;
 typedef Poco::Net::StreamSocket* StreamSocketPtr;
 typedef SafeSet<StreamSocketPtr> StreamSocketPtrSet;   //Here I'm using my own thread_safe set
-typedef std::map<Channel, StreamSocketPtrSet> ChannelMap;
+typedef std::map<HPChannel, StreamSocketPtrSet> ChannelMap;
 
 //! MessageRouter main work is deliver publish messages through channels and
 //! gave it to the users who registered to them
@@ -31,13 +31,13 @@ public:
     MessageRouter();
 
     //! Register a client to a specific channel
-    void subscribe(Channel channel, StreamSocketPtr client);
+    void subscribe(HPChannel channel, StreamSocketPtr client);
 
     //! Unsubscribe a client from all channels (due to closing connection or an error)
     void unsubscribe(StreamSocketPtr client);
 
     //! Publish a message from a client to subscribed clients
-    void publish(Channel channel, StreamSocketPtr caller, u_char* message, uint32_t len, bool first);
+    void publish(HPChannel channel, StreamSocketPtr caller, u_char* message, uint32_t len, bool first);
 };
 
 #endif

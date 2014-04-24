@@ -56,12 +56,14 @@ DataManager::DataManager(const string mongo_ip, const string mongo_port,
  _mongoport(mongo_port), _mongo_db(mongo_db), _mongo_collection(mongo_collection)
 {
     mongo::DBClientConnection _conn;
+    string errmsg;
     _logger.debug("Connecting to Mongodb...");
     _logger.debug("Mongo IP: "+_mongoip);
     _logger.debug("Mongo Port: "+_mongoport);
     _logger.debug("Mongo DB: "+_mongo_db);
     _logger.debug("Mongo Collection: "+_mongo_collection);
-    _conn.connect(_mongoip);
+    if(!_conn.connect(_mongoip,errmsg))
+        throw Poco::Exception("Mongodb connection fail");
     _logger.information("Connected with mongodb");
 
     auto_ptr<mongo::DBClientCursor> cursor =
@@ -81,6 +83,8 @@ DataManager::DataManager(const string mongo_ip, const string mongo_port,
                 inserter( u._publish_chs,  u._publish_chs.begin()));
         _usersMap[p.getStringField("identifier")] = u;
     }
+    if(_usersMap.empty())
+        throw Poco::Exception("Mongodb connection empty or not existing!");
     _logger.information("Data fetching from mongodb completed!");
 }
 #endif

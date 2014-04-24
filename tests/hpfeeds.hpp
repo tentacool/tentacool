@@ -41,4 +41,6 @@ hpf_chunk_t *hpf_msg_get_chunk(u_char *data, size_t len);
 hpf_msg_t *hpf_msg_error(const string err);
 hpf_msg_t *hpf_msg_info(u_int32_t nonce, string fbname);
 hpf_msg_t *hpf_msg_publish(string ident, string channel, u_char *data, size_t data_len);
+hpf_msg_t *hpf_msg_subscribe(string ident, string channel);
+hpf_msg_t *hpf_msg_auth(u_int32_t nonce, string ident, string secret);
 #endif

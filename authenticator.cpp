@@ -24,6 +24,11 @@ const uint32_t Authenticator::genNonce()
     return _nonce;
 }
 
+const uint32_t Authenticator::nonce() const
+{
+    return _nonce;
+}
+
 bool Authenticator::authenticate(string hash, string password)
 {
     Poco::DigestEngine::Digest d(hash.begin(), hash.end());

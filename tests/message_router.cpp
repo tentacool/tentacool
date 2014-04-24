@@ -13,7 +13,7 @@ MessageRouter::MessageRouter() :
 {
 }
 
-void MessageRouter::subscribe(Channel channel, StreamSocketPtr client)
+void MessageRouter::subscribe(HPChannel channel, StreamSocketPtr client)
 {
     _logger.information("Subscribe request on channel "+
             channel+" for "+client->peerAddress().host().toString());
@@ -48,7 +48,7 @@ void MessageRouter::unsubscribe(StreamSocketPtr client)
     _map_mutex.w_unlock();
 }
 
-void MessageRouter::publish(Channel channel, StreamSocketPtr caller,
+void MessageRouter::publish(HPChannel channel, StreamSocketPtr caller,
         u_char* message, uint32_t len, bool first)
 {
     if(first)

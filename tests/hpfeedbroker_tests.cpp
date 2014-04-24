@@ -1,9 +1,20 @@
 #include "authenticator_tests.hpp"
 #include "data_manager_tests.hpp"
+#include "hpfeeds_tests.hpp"
+#include "integration_tests.hpp"
+#include <cppunit/extensions/HelperMacros.h>
+#include <cppunit/TestFixture.h>
+#include <cppunit/TestListener.h>
+#include <cppunit/TestResult.h>
+#include <cppunit/TestResultCollector.h>
+#include <cppunit/BriefTestProgressListener.h>
+#include <cppunit/TestRunner.h>
 
 // The test execution order follow the suite registration order
 CPPUNIT_TEST_SUITE_REGISTRATION(Authenticator_test);
+CPPUNIT_TEST_SUITE_REGISTRATION(Hpfeeds_test);
 CPPUNIT_TEST_SUITE_REGISTRATION(DataManager_test);
+CPPUNIT_TEST_SUITE_REGISTRATION(Integration_test);
 
 class CoverageScannerListener : public TestListener
 {
@@ -26,7 +37,11 @@ public:
             __coveragescanner_testname(testname.c_str()) ;
        #endif
     }
-    void addFailure( const CppUnit::TestFailure &failure ) { m_testFailed=true; }
+
+    void addFailure( const CppUnit::TestFailure &failure )
+    {
+        m_testFailed=true;
+    }
 
     void endTest( CppUnit::Test *test )
     {
@@ -53,7 +68,7 @@ private:
 int main (int argc, char **argv)
 {
     #ifdef __COVERAGESCANNER__
-        __coveragescanner_install("hpfeeds_broker");
+        __coveragescanner_install("hpfeeds_broker_test");
     #endif
 
     // Create the event manager and test controller
@@ -73,7 +88,8 @@ int main (int argc, char **argv)
 
     // Add the top suite to the test runner
     CPPUNIT_NS::TestRunner runner;
-    runner.addTest( CPPUNIT_NS::TestFactoryRegistry::getRegistry().makeTest() );
+    runner.addTest( CPPUNIT_NS::TestFactoryRegistry::getRegistry().
+                    makeTest());
     runner.run( controller );
 
     // Return error code 1 if the one of test failed.

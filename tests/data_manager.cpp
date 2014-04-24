@@ -1,16 +1,23 @@
 #include "data_manager.hpp"
 #include "Poco/StringTokenizer.h"
+#include "Poco/AutoPtr.h"
 #include <fstream>
 #include <exception>
+
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #define MAX_FIELD_LENGTH 256
 
 using namespace Poco;
 
+//!File Constructor
+//!\brief Initialize the users data structures reading from file
+//!\param filename
 DataManager::DataManager( string filename):
-    _logger(Logger::get("HF_Broker")), _mode(false), _filename(filename) {
-    //!
-    //!\brief Initialize the users data structures reading from file
-    //!\param filename (with absolute path)
+    _logger(Logger::get("HF_Broker")), _mode(false), _filename(filename)
+{
     _input.open(_filename.c_str());
     if(!_input) throw Poco::Exception("Error opening the file");
     string line = "";
@@ -36,20 +43,28 @@ DataManager::DataManager( string filename):
     _input.close();
     _logger.debug("Data fetching from file completed!");
 }
-
+#ifdef __WITH_MONGO__
+//!File Constructor
+//!\brief Initialize the users data structures extracting datas from a Mongodb collection
+//!\param Mongo IP
+//!\param Mongo Port
+//!\param Mongo DB name
+//!\param Mongo Collection name
 DataManager::DataManager(const string mongo_ip, const string mongo_port,
                             const string mongo_db, const string mongo_collection):
  _logger(Logger::get("HF_Broker")), _mode(true), _mongoip(mongo_ip),
  _mongoport(mongo_port), _mongo_db(mongo_db), _mongo_collection(mongo_collection)
 {
     mongo::DBClientConnection _conn;
+    string errmsg;
     _logger.debug("Connecting to Mongodb...");
     _logger.debug("Mongo IP: "+_mongoip);
     _logger.debug("Mongo Port: "+_mongoport);
     _logger.debug("Mongo DB: "+_mongo_db);
     _logger.debug("Mongo Collection: "+_mongo_collection);
-    _conn.connect(_mongoip);
-    _logger.debug("Connected with mongodb");
+    if(!_conn.connect(_mongoip,errmsg))
+        throw Poco::Exception("Mongodb connection fail");
+    _logger.information("Connected with mongodb");
 
     auto_ptr<mongo::DBClientCursor> cursor =
             _conn.query(_mongo_db+"."+_mongo_collection);
@@ -68,8 +83,11 @@ DataManager::DataManager(const string mongo_ip, const string mongo_port,
                 inserter( u._publish_chs,  u._publish_chs.begin()));
         _usersMap[p.getStringField("identifier")] = u;
     }
+    if(_usersMap.empty())
+        throw Poco::Exception("Mongodb connection empty or not existing!");
     _logger.information("Data fetching from mongodb completed!");
 }
+#endif
 
 DataManager::~DataManager() {}
 

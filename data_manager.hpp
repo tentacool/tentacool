@@ -54,4 +54,4 @@ private:
     string _mongo_collection;
 };
 
-#endif /* __DATAMANAGER__ */
+#endif
