@@ -15,15 +15,14 @@ public:
     ~Hpfeeds_client();
     void connect();
     void send_auth_message(string name, string secret);
+    void send_subscribe_message(string name, string channel);
+    void send_publish_message(string name, string channel, string message);
     void receive_info_message();
-    void print_data(){
-        cout<<_broker_name<<", "<<_nonce<<endl;
-    }
+    void receive_publish_message();
     void disconnect();
 private:
     string _broker_address;
     unsigned short _broker_port;
-    //Net::SocketStream* _sock;
     Net::StreamSocket* _sock;
     string _broker_name;
     uint32_t _nonce;

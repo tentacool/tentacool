@@ -18,7 +18,11 @@ public:
     void testCreateInfoMsg();
     void testMsgData();
     void testCreateErrMsg();
+    void testCreateAuthMsg();
+    void testCreateSubscribeMsg();
     void testCreatePublishMsg();
+    void testCreatePublishErr();
+    void testCreatePublishErr2();
     uint32_t genNonce(int seed = 0);
     static Test *suite();
 };

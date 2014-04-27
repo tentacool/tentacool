@@ -19,8 +19,14 @@ public:
     void tearDown();
     pthread_t startBroker(Arguments* args);
     void stopBroker(pthread_t t);
+    void testHelp();
     void testConnectDisconnect();
+    void testDifferentPortAndName();
+    void testWithMongo();
     void testAuthentication();
+    void testSubscribe();
+    void testPublish();
+    void testPublishConcurrency();
     static Test *suite();
 };
 

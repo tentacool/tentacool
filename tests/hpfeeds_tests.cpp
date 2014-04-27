@@ -35,6 +35,23 @@ uint32_t Hpfeeds_test::genNonce(int seed){
     }
     return _prng.next();
 }
+void Hpfeeds_test::testCreatePublishErr()
+{
+    u_char* data = NULL;
+    hpf_msg_t*  pub = NULL;
+    CPPUNIT_ASSERT_THROW(pub=hpf_msg_publish("aldo","ch1", data, 0),Poco::Exception);
+    hpf_msg_delete(pub);
+}
+void Hpfeeds_test::testCreatePublishErr2()
+{
+    vector<u_char> publish_data;
+    publish_data.insert(publish_data.end(),'d');
+    hpf_msg_t*  pub = NULL;
+    //Wrong lenght
+    CPPUNIT_ASSERT_THROW(pub=hpf_msg_publish("aldo","ch1",
+            publish_data.data(), 0),Poco::Exception);
+    hpf_msg_delete(pub);
+}
 void Hpfeeds_test::testCreateInfoMsg()
 {
     //memcmp returns 0 -> equal
@@ -75,6 +92,22 @@ void Hpfeeds_test::testCreatePublishMsg(){
     hpf_msg_delete(pub_1);
     hpf_msg_delete(pub_2);
 }
+void Hpfeeds_test::testCreateSubscribeMsg()
+{
+    hpf_msg_t*  sub_1 = hpf_msg_subscribe("aldo","ch1");
+    hpf_msg_t*  sub_2 = hpf_msg_subscribe("aldo","ch1");
+    CPPUNIT_ASSERT(memcmp(sub_1, sub_2, sizeof(sub_1))==0);
+    hpf_msg_delete(sub_1);
+    hpf_msg_delete(sub_2);
+}
+void Hpfeeds_test::testCreateAuthMsg()
+{
+    hpf_msg_t*  auth_1 = hpf_msg_auth(1234, "aldo", "s3cr3t");
+    hpf_msg_t*  auth_2 = hpf_msg_auth(1234, "aldo","s3cr3t");
+    CPPUNIT_ASSERT(memcmp(auth_1, auth_2, sizeof(auth_1))==0);
+    hpf_msg_delete(auth_1);
+    hpf_msg_delete(auth_2);
+}
 Test *Hpfeeds_test::suite()
 {
     TestSuite *suiteOfTests = new CppUnit::TestSuite( "Hpfeeds_test" );
@@ -91,7 +124,23 @@ Test *Hpfeeds_test::suite()
                         &Hpfeeds_test::testCreateErrMsg));
 
     suiteOfTests->addTest(
+                new CppUnit::TestCaller<Hpfeeds_test>("testCreateAuthMsg",
+                        &Hpfeeds_test::testCreateAuthMsg));
+
+    suiteOfTests->addTest(
+                new CppUnit::TestCaller<Hpfeeds_test>("testCreateSubscribeMsg",
+                        &Hpfeeds_test::testCreateSubscribeMsg));
+
+    suiteOfTests->addTest(
                 new CppUnit::TestCaller<Hpfeeds_test>("testCreatePublishMsg",
                         &Hpfeeds_test::testCreatePublishMsg));
-        return suiteOfTests;
+
+    suiteOfTests->addTest(
+                new CppUnit::TestCaller<Hpfeeds_test>("testCreatePublishErr",
+                        &Hpfeeds_test::testCreatePublishErr));
+
+    suiteOfTests->addTest(
+                new CppUnit::TestCaller<Hpfeeds_test>("testCreatePublishErr2",
+                        &Hpfeeds_test::testCreatePublishErr2));
+    return suiteOfTests;
 }

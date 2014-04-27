@@ -182,7 +182,7 @@ void BrokerApplication::handleOption(const std::string& name, const std::string&
         }else if(name=="mongodb"){
             _mongo_db = value;
             logger.debug("Mongo db name: "+value);
-        }else if(name=="mongoip"){
+        }else if(name=="mongocoll"){
             _mongo_collection = value;
             logger.debug("Mongo collection name: "+value);
         }

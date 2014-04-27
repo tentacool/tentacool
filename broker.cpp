@@ -1,11 +1,3 @@
-//============================================================================
-// Name        : broker.cpp
-// Author      : Aldo Mollica
-// Version     :
-// Copyright   : Your copyright notice
-// Description : Hpfeeds Broker in C++, Ansi-style
-//============================================================================
-
 #include <iostream>
 #include <Poco/String.h>
 #include <Poco/Message.h>
@@ -204,7 +196,7 @@ protected:
         }else if(name=="mongodb"){
             _mongo_db = value;
             logger.debug("Mongo db name: "+value);
-        }else if(name=="mongoip"){
+        }else if(name=="mongocoll"){
             _mongo_collection = value;
             logger.debug("Mongo collection name: "+value);
         }

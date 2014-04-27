@@ -24,12 +24,13 @@ DataManager_test::DataManager_test(): dm_mongodb_work(NULL)
     string errmsg;
     try{
         if(!_conn.connect("localhost",errmsg))
-                throw Poco::Exception("Mongodb connection fail");
+                throw Poco::Exception("Mongodb connection fail. "
+                        "Check if mongodb is running.");
         auto_ptr<mongo::DBClientCursor> cursor =
                 _conn.query("hpfeeds.auth_key");
         if((*cursor).itcount() == 0){
             cout<<"hpfeeds.auth_key collection does not exists and will be created"<<endl;
-            mongo::BSONObjBuilder b1,b2;
+            mongo::BSONObjBuilder b1,b2,b3;
             //aldo
             vector<string> publish1;
             publish1.insert(publish1.end(),"ch1");
@@ -43,17 +44,29 @@ DataManager_test::DataManager_test(): dm_mongodb_work(NULL)
             mongo::BSONObj u1 = b1.obj();
             _conn.insert("hpfeeds.auth_key",u1);
             //filippo
-//            vector<string> publish2;
-//            publish2.insert(publish2.end(),"ch1");
-//            publish2.insert(publish2.end(),"ch2");
-//            vector<string> subscribe2;
-//            subscribe2.insert(subscribe2.end(),"ch1");
-//            b2.append("secret","4321");
-//            b2.append("identifier","filippo");
-//            b2.append("publish", publish2);
-//            b2.append("subscribe", subscribe2);
-//            mongo::BSONObj u2 = b2.obj();
-//            _conn.insert("hpfeeds.auth_key",u2);
+            vector<string> publish2;
+            publish2.insert(publish2.end(),"ch1");
+            publish2.insert(publish2.end(),"ch2");
+            vector<string> subscribe2;
+            subscribe2.insert(subscribe2.end(),"ch1");
+            b2.append("secret","pwd");
+            b2.append("identifier","filippo");
+            b2.append("publish", publish2);
+            b2.append("subscribe", subscribe2);
+            mongo::BSONObj u2 = b2.obj();
+            _conn.insert("hpfeeds.auth_key",u2);
+            //pippo
+            vector<string> publish3;
+            publish3.insert(publish3.end(),"ch1");
+            publish3.insert(publish3.end(),"ch2");
+            vector<string> subscribe3;
+            subscribe3.insert(subscribe3.end(),"ch1");
+            b3.append("secret","pwd");
+            b3.append("identifier","filippo");
+            b3.append("publish", publish2);
+            b3.append("subscribe", subscribe2);
+            mongo::BSONObj u3 = b3.obj();
+            _conn.insert("hpfeeds.auth_key",u3);
         }
     }catch(Poco::Exception& e){
         cout<<e.displayText()<<endl;
