@@ -1,4 +1,6 @@
 #include "hpfeeds.hpp"
+#include <Poco/SHA1Engine.h>
+#include <Poco/DigestEngine.h>
 
 using namespace std;
 
@@ -95,5 +97,37 @@ hpf_msg_t *hpf_msg_publish(string ident, string channel, u_char *data, size_t da
     hpf_msg_add_chunk(&msg, reinterpret_cast<const u_char*>(ident.data()), ident.length());
     hpf_msg_add_chunk(&msg, reinterpret_cast<const u_char*>(channel.data()), channel.length());
     hpf_msg_add_payload(&msg, data, data_len);
+    return msg;
+}
+
+hpf_msg_t *hpf_msg_subscribe(string ident, string channel)
+{
+    hpf_msg_t *msg;
+    msg = hpf_msg_new();
+    if (!msg)
+        throw Poco::Exception("Memory allocation fault");
+    msg->hdr.opcode = OP_SUBSCRIBE;
+    hpf_msg_add_chunk(&msg, reinterpret_cast<const u_char*>(ident.data()), ident.length());
+    hpf_msg_add_payload(&msg, reinterpret_cast<const u_char*>(channel.data()), channel.length());
+    return msg;
+}
+hpf_msg_t *hpf_msg_auth(u_int32_t nonce, string ident, string secret)
+{
+    hpf_msg_t *msg;
+    msg = hpf_msg_new();
+    if (!msg)
+        throw Poco::Exception("Memory allocation fault");
+    msg->hdr.opcode = OP_AUTH;
+
+    //Preparing the hash to use
+    Poco::SHA1Engine sha1;
+    Poco::DigestEngine::Digest hash_d;
+    sha1.update((unsigned char*)&nonce, 4);
+    sha1.update(secret.data(), secret.size());
+    hash_d = sha1.digest();
+    string hash(hash_d.begin(),hash_d.end());
+
+    hpf_msg_add_chunk(&msg, reinterpret_cast<const u_char*>(ident.data()), ident.length());
+    hpf_msg_add_payload(&msg, reinterpret_cast<const u_char*>(hash.data()), hash.length());
     return msg;
 }

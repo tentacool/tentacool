@@ -1,6 +1,7 @@
 #include "integration_tests.hpp"
 #include "hpfeeds_client.hpp"
 #include "broker.hpp"
+#include <Poco/Random.h>
 #include <pthread.h>
 #include <signal.h>
 #include <vector>
@@ -144,6 +145,55 @@ void Integration_test::testSubscribe()
     sleep(1);
     delete a;
 }
+void Integration_test::testDoubleSubscribe()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+    a->insert(a->end(),"-m");
+    a->insert(a->end(),"file");
+    a->insert(a->end(),"-v");
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-f");
+    a->insert(a->end(),"data/auth_keys.dat");
+    pthread_t broker_thread = startBroker(a);
+    sleep(2); //Wait for Broker setup
+    Hpfeeds_client client;
+    client.connect();
+    sleep(1);
+    client.receive_info_message();
+    client.send_auth_message("aldo", "s3cr3t");
+    client.send_subscribe_message("aldo", "ch1");
+    client.send_subscribe_message("aldo", "ch1");
+    client.disconnect();
+    stopBroker(broker_thread);
+    sleep(1);
+    delete a;
+}
+void Integration_test::testSubscribeNotAllowed()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+    a->insert(a->end(),"-m");
+    a->insert(a->end(),"file");
+    a->insert(a->end(),"-v");
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-f");
+    a->insert(a->end(),"data/auth_keys.dat");
+    pthread_t broker_thread = startBroker(a);
+    sleep(2); //Wait for Broker setup
+    Hpfeeds_client client;
+    client.connect();
+    sleep(1);
+    client.receive_info_message();
+    client.send_auth_message("aldo", "s3cr3t");
+    client.send_subscribe_message("aldo", "ch3");
+    sleep(1);
+    client.receive_error_message();
+    client.disconnect();
+    stopBroker(broker_thread);
+    sleep(1);
+    delete a;
+}
 void Integration_test::testPublish()
 {
     Arguments* a = new Arguments();
@@ -179,6 +229,172 @@ void Integration_test::testPublish()
     sleep(1);
     delete a;
 }
+void Integration_test::testPublishNoChannel()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+    a->insert(a->end(),"-m");
+    a->insert(a->end(),"file");
+    a->insert(a->end(),"-v");
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-f");
+    a->insert(a->end(),"data/auth_keys.dat");
+    pthread_t broker_thread = startBroker(a);
+    sleep(2); //Wait for Broker setup
+    Hpfeeds_client client_sub;
+    Hpfeeds_client client_pub;
+    //SUBSCRIBER
+    client_sub.connect();
+    sleep(1);
+    client_sub.receive_info_message();
+    client_sub.send_auth_message("aldo", "s3cr3t");
+    client_sub.send_subscribe_message("aldo", "ch1");
+    //PUBLISHER
+    client_pub.connect();
+    sleep(1);
+    client_pub.receive_info_message();
+    client_pub.send_auth_message("filippo", "pwd");
+    client_pub.send_publish_message("filippo", "ch2", "testing");
+    client_pub.disconnect();
+    //SUBSCRIBER RECEIVE
+    sleep(1);
+    client_sub.receive_publish_message();
+    client_sub.disconnect();
+    stopBroker(broker_thread);
+    sleep(1);
+    delete a;
+}
+void Integration_test::testPublishNotAllowed()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+    a->insert(a->end(),"-m");
+    a->insert(a->end(),"file");
+    a->insert(a->end(),"-v");
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-f");
+    a->insert(a->end(),"data/auth_keys.dat");
+    pthread_t broker_thread = startBroker(a);
+    sleep(2); //Wait for Broker setup
+    Hpfeeds_client client_sub;
+    Hpfeeds_client client_pub;
+    //SUBSCRIBER
+    client_sub.connect();
+    sleep(1);
+    client_sub.receive_info_message();
+    client_sub.send_auth_message("aldo", "s3cr3t");
+    client_sub.send_subscribe_message("aldo", "ch1");
+    //PUBLISHER
+    client_pub.connect();
+    sleep(1);
+    client_pub.receive_info_message();
+    client_pub.send_auth_message("filippo", "pwd");
+    client_pub.send_publish_message("filippo", "ch77", "testing");
+    //SUBSCRIBER RECEIVE
+    sleep(1);
+    client_pub.receive_error_message();
+    client_pub.disconnect();
+    client_sub.disconnect();
+    stopBroker(broker_thread);
+    sleep(1);
+    delete a;
+}
+void Integration_test::testWrongOpCode()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+    a->insert(a->end(),"-m");
+    a->insert(a->end(),"file");
+    a->insert(a->end(),"-v");
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-f");
+    a->insert(a->end(),"data/auth_keys.dat");
+    pthread_t broker_thread = startBroker(a);
+    sleep(2); //Wait for Broker setup
+    Hpfeeds_client client_sub;
+    //SUBSCRIBER
+    client_sub.connect();
+    sleep(1);
+    client_sub.receive_info_message();
+    client_sub.send_auth_message("aldo", "s3cr3t");
+    client_sub.send_wrong_message(13,45,"wrong message");
+    //SUBSCRIBER RECEIVE
+    sleep(1);
+    client_sub.receive_error_message();
+    client_sub.disconnect();
+    stopBroker(broker_thread);
+    sleep(1);
+    delete a;
+}
+void Integration_test::testWrongTotalLength()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+    a->insert(a->end(),"-m");
+    a->insert(a->end(),"file");
+    a->insert(a->end(),"-v");
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-f");
+    a->insert(a->end(),"data/auth_keys.dat");
+    pthread_t broker_thread = startBroker(a);
+    sleep(2); //Wait for Broker setup
+    Hpfeeds_client client_sub;
+    //SUBSCRIBER
+    client_sub.connect();
+    sleep(1);
+    client_sub.receive_info_message();
+    client_sub.send_auth_message("aldo", "s3cr3t");
+    client_sub.send_wrong_message(4,3,"wrong message");
+    //SUBSCRIBER RECEIVE
+    sleep(1);
+    client_sub.receive_error_message();
+    client_sub.disconnect();
+    stopBroker(broker_thread);
+    sleep(1);
+    delete a;
+}
+void Integration_test::testPublishBigMessage()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+    a->insert(a->end(),"-m");
+    a->insert(a->end(),"file");
+    a->insert(a->end(),"-v");
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-f");
+    a->insert(a->end(),"data/auth_keys.dat");
+    pthread_t broker_thread = startBroker(a);
+    sleep(2); //Wait for Broker setup
+    Hpfeeds_client client_sub;
+    Hpfeeds_client client_pub;
+    //CREATING BIG DATA
+    vector<u_char> datas;
+    Random _r;
+    for(int i=0; i<(3*1024); i++){
+        datas.insert(datas.end(), _r.nextChar());
+    }
+    string data(datas.begin(), datas.end());
+    //SUBSCRIBER
+    client_sub.connect();
+    sleep(1);
+    client_sub.receive_info_message();
+    client_sub.send_auth_message("aldo", "s3cr3t");
+    client_sub.send_subscribe_message("aldo", "ch1");
+    //PUBLISHER
+    client_pub.connect();
+    sleep(1);
+    client_pub.receive_info_message();
+    client_pub.send_auth_message("filippo", "pwd");
+    client_pub.send_publish_message("filippo", "ch1", data);
+    client_pub.disconnect();
+    //SUBSCRIBER RECEIVE
+    sleep(1);
+    client_sub.receive_publish_message();
+    client_sub.disconnect();
+    stopBroker(broker_thread);
+    sleep(1);
+    delete a;
+}
 void Integration_test::testPublishConcurrency()
 {
     Arguments* a = new Arguments();
@@ -200,22 +416,30 @@ void Integration_test::testPublishConcurrency()
     client_sub.send_auth_message("aldo", "s3cr3t");
     client_sub.send_subscribe_message("aldo", "ch1");
 
-    //START PUBLISHERS IN 2 THREADS
+    //START PUBLISHERS IN 3 THREADS
     vector<string> pub_data_1;
     pub_data_1.insert(pub_data_1.end(), "PUBLISHER1");
-    pub_data_1.insert(pub_data_1.end(), "pippo");
-    pub_data_1.insert(pub_data_1.end(), "1234");
+    pub_data_1.insert(pub_data_1.end(), "maria");
+    pub_data_1.insert(pub_data_1.end(), "4321");
     pub_data_1.insert(pub_data_1.end(), "ch1");
-    pub_data_1.insert(pub_data_1.end(), "I am Pippo");
+    pub_data_1.insert(pub_data_1.end(), "I am Maria");
     pthread_t pub_1;
 
     vector<string> pub_data_2;
     pub_data_2.insert(pub_data_2.end(), "PUBLISHER2");
-    pub_data_2.insert(pub_data_2.end(), "filippo");
-    pub_data_2.insert(pub_data_2.end(), "pwd");
+    pub_data_2.insert(pub_data_2.end(), "pippo");
+    pub_data_2.insert(pub_data_2.end(), "1234");
     pub_data_2.insert(pub_data_2.end(), "ch1");
-    pub_data_2.insert(pub_data_2.end(), "I am Filippo");
+    pub_data_2.insert(pub_data_2.end(), "I am Pippo");
     pthread_t pub_2;
+
+    vector<string> pub_data_3;
+    pub_data_3.insert(pub_data_3.end(), "PUBLISHER3");
+    pub_data_3.insert(pub_data_3.end(), "filippo");
+    pub_data_3.insert(pub_data_3.end(), "pwd");
+    pub_data_3.insert(pub_data_3.end(), "ch1");
+    pub_data_3.insert(pub_data_3.end(), "I am Filippo");
+    pthread_t pub_3;
 
     int res1 = pthread_create(&pub_1, NULL, run_publisher, &pub_data_1);
     if (res1){
@@ -227,10 +451,16 @@ void Integration_test::testPublishConcurrency()
         cout<<"Error during "<<pub_data_2[0]<<" creation: "<<res2<<endl;
     }
 
+    int res3 = pthread_create(&pub_3, NULL, run_publisher, &pub_data_3);
+    if (res3){
+        cout<<"Error during "<<pub_data_3[0]<<" creation: "<<res3<<endl;
+    }
     //SUBSCRIBER RECEIVE
     pthread_join(pub_1, NULL);
     pthread_join(pub_2, NULL);
+    pthread_join(pub_3, NULL);
     sleep(1);
+    client_sub.receive_publish_message();
     client_sub.receive_publish_message();
     client_sub.receive_publish_message();
     client_sub.disconnect();
@@ -306,8 +536,29 @@ Test *Integration_test::suite()
             new CppUnit::TestCaller<Integration_test>("testSubscribe",
                     &Integration_test::testSubscribe));
     suiteOfTests->addTest(
+            new CppUnit::TestCaller<Integration_test>("testDoubleSubscribe",
+                    &Integration_test::testDoubleSubscribe));
+    suiteOfTests->addTest(
+            new CppUnit::TestCaller<Integration_test>("testSubscribeNotAllowed",
+                    &Integration_test::testSubscribeNotAllowed));
+    suiteOfTests->addTest(
+            new CppUnit::TestCaller<Integration_test>("testWrongOpCode",
+                    &Integration_test::testWrongOpCode));
+    suiteOfTests->addTest(
+            new CppUnit::TestCaller<Integration_test>("testWrongTotalLength",
+                    &Integration_test::testWrongTotalLength));
+    suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testPublish",
                     &Integration_test::testPublish));
+    suiteOfTests->addTest(
+            new CppUnit::TestCaller<Integration_test>("testPublishNoChannel",
+                    &Integration_test::testPublishNoChannel));
+    suiteOfTests->addTest(
+            new CppUnit::TestCaller<Integration_test>("testPublishNotAllowed",
+                    &Integration_test::testPublishNotAllowed));
+    suiteOfTests->addTest(
+            new CppUnit::TestCaller<Integration_test>("testPublishBigMessage",
+                    &Integration_test::testPublishBigMessage));
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testPublishConcurrency",
                     &Integration_test::testPublishConcurrency));

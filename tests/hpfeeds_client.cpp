@@ -30,13 +30,35 @@ void Hpfeeds_client::disconnect()
 {
     if(_sock!=NULL) _sock->close();
 }
+void Hpfeeds_client::receive_error_message()
+{
+    uint32_t total_length;
+    uint8_t op_code;
+    Poco::Timespan timeOut(10, 0); //sec, usec
+    memset(_inBuffer, 0x0, MAX_BUF);
+    if (!_sock->poll(timeOut,Net::Socket::SELECT_READ) == false){
+        _sock->receiveBytes(_inBuffer, sizeof(uint32_t) + sizeof(uint8_t));
+        //This is the total length
+        memcpy(&total_length,_inBuffer,sizeof(uint32_t));
+        //GET OPCODE
+        memcpy(&op_code,_inBuffer+sizeof(uint32_t),sizeof(uint8_t));
+        //get the rest
+        _sock->receiveBytes(_inBuffer + sizeof(uint32_t) +
+                sizeof(uint8_t), ntohl(total_length) -
+                sizeof(uint32_t) - sizeof(uint8_t));
+        if(op_code==OP_ERROR){
+            cout<<"Server answered with an error message: "<<
+                    (_inBuffer+sizeof(uint32_t) + sizeof(uint8_t))<<endl;
+        }
+    }
+}
 void Hpfeeds_client::receive_info_message()
 {
     hpf_msg_t* msg = NULL;
     uint32_t total_length;
     uint8_t op_code;
     Poco::Timespan timeOut(10, 0); //sec, usec
-    memset(_inBuffer, 0x0, CHUNK);
+    memset(_inBuffer, 0x0, MAX_BUF);
     if (!_sock->poll(timeOut,Net::Socket::SELECT_READ) == false){
         _sock->receiveBytes(_inBuffer, sizeof(uint32_t) + sizeof(uint8_t));
         //This is the total length
@@ -67,7 +89,7 @@ void Hpfeeds_client::receive_publish_message()
     uint32_t total_length;
     uint8_t op_code;
     Poco::Timespan timeOut(10, 0); //sec, usec
-    memset(_inBuffer, 0x0, CHUNK);
+    memset(_inBuffer, 0x0, MAX_BUF);
     if (!_sock->poll(timeOut,Net::Socket::SELECT_READ) == false){
         _sock->receiveBytes(_inBuffer, sizeof(uint32_t) + sizeof(uint8_t));
         //This is the total length
@@ -75,18 +97,23 @@ void Hpfeeds_client::receive_publish_message()
         cout<<"TL: "<<ntohl(total_length)<<endl;
         //GET OPCODE
         memcpy(&op_code,_inBuffer+sizeof(uint32_t),sizeof(uint8_t));
+
         //Receive the rest
-        //do{
         while (_sock->poll(timeOut,Net::Socket::SELECT_READ) == false);
         int nbytes = _sock->receiveBytes(_inBuffer + sizeof(uint32_t) +
                 sizeof(uint8_t), ntohl(total_length) -
                 sizeof(uint32_t) - sizeof(uint8_t));
         cout<<"BYTE LETTI PUBLISH: "<<nbytes<<endl;
 
-        //}while(nbytes!=0);
         msg = hpf_msg_new();
         msg = reinterpret_cast<hpf_msg_t *>(_inBuffer);
         //memcpy(msg,_inBuffer,ntohl(total_length));
+
+
+        if(op_code==OP_ERROR){
+            cout<<"Server answered with an error message: "<<msg->data<<endl;
+            return;
+        }
 
         //Getting name
         hpf_chunk_t *name = hpf_msg_get_chunk((u_char*)msg->data, msg->data[0]);
@@ -96,12 +123,14 @@ void Hpfeeds_client::receive_publish_message()
                                                 + 1 + name->len , msg->data[name->len + 1]);
         string s_channel(reinterpret_cast<char*>(channel->data), channel->len);
         //Get message
-        u_char* message = new u_char();
-        memcpy(message, msg->data + 1 + name->len + 1 + channel->len,
+        //u_char* message = new u_char();
+        //memcpy(message, msg->data + 1 + name->len + 1 + channel->len,
+        //        ntohl(total_length) - 5 - 1 - name->len - 1 - channel->len);
+        string message(reinterpret_cast<char*>(msg->data) + 1 + name->len + 1 + channel->len,
                 ntohl(total_length) - 5 - 1 - name->len - 1 - channel->len);
         cout<<"Message from "+s_name+" on channel "+s_channel+":"<<endl<<"=>  "
                 <<message<<endl;
-        delete message;
+        //delete message;
     }
 }
 void Hpfeeds_client::send_auth_message(string name, string secret)
@@ -123,4 +152,17 @@ void Hpfeeds_client::send_subscribe_message(string name, string channel)
     hpf_msg_t * sub = hpf_msg_subscribe(name, channel);
     _sock->sendBytes(sub, ntohl(sub->hdr.msglen));
     hpf_msg_delete(sub);
+}
+
+void Hpfeeds_client::send_wrong_message(uint32_t total_length, uint8_t op_code, string data)
+{
+    hpf_msg_t * wrong = hpf_msg_new();
+    if (!wrong)
+          throw Poco::Exception("Memory allocation fault");
+    wrong->hdr.opcode = op_code;
+    hpf_msg_add_payload(&wrong, reinterpret_cast<const u_char*>(data.data()),
+                                                            data.length());
+    wrong->hdr.msglen = htonl(total_length);
+    _sock->sendBytes(wrong, ntohl(wrong->hdr.msglen));
+    hpf_msg_delete(wrong);
 }

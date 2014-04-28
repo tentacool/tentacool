@@ -4,10 +4,12 @@
 #include <Poco/Net/Socket.h>
 #include <Poco/Net/TCPServerConnection.h>
 #include <Poco/Logger.h>
+#include <Poco/RWLock.h>
 #include <string>
 #include "message_router.hpp"
 #include "authenticator.hpp"
 #include "data_manager.hpp"
+#include "rw_lock_t.hpp"
 
 #define DATA 10*1024*1024 //10MB
 #define HEADER 5
@@ -68,11 +70,15 @@ private:
     //! The server FSM state
     hpfeeds_server_state_t _state;
 
+    //! Mutex for publishing
+    static ReadWriteLock _publishing_lock;
+    //static RWLock _publishing_lock;
     //! Authenticate the user exploiting the Authenticator
     void authUser();
 
-    //! Send an error message to the client
-    void sendErrorMsg(const string msg, bool sendToPeer);
+    //! Send an error message to the client, if logMsg is true it
+    //  write the error message in the logger
+    void sendErrorMsg(const string msg, bool logMsg);
 };
 
 #endif

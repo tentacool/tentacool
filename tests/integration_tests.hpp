@@ -23,9 +23,16 @@ public:
     void testConnectDisconnect();
     void testDifferentPortAndName();
     void testWithMongo();
+    void testWrongOpCode();
+    void testWrongTotalLength();
     void testAuthentication();
     void testSubscribe();
+    void testDoubleSubscribe();
+    void testSubscribeNotAllowed();
     void testPublish();
+    void testPublishNoChannel();
+    void testPublishNotAllowed();
+    void testPublishBigMessage();
     void testPublishConcurrency();
     static Test *suite();
 };

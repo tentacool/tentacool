@@ -48,7 +48,7 @@ void MessageRouter::unsubscribe(StreamSocketPtr client)
     _map_mutex.w_unlock();
 }
 
-void MessageRouter::publish(HPChannel channel, StreamSocketPtr caller,
+int MessageRouter::publish(HPChannel channel, StreamSocketPtr caller,
         u_char* message, uint32_t len, bool first)
 {
     if(first)
@@ -62,7 +62,7 @@ void MessageRouter::publish(HPChannel channel, StreamSocketPtr caller,
 
     if (channelset.size() == 0) {
         _logger.information("Channel "+channel+" not present");
-        return;
+        return -1;
     }
 
     StreamSocketPtrSet::iterator itr;
@@ -71,4 +71,5 @@ void MessageRouter::publish(HPChannel channel, StreamSocketPtr caller,
             (*itr)->sendBytes(message, len);
         }
     }
+    return 0;
 }

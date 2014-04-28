@@ -30,7 +30,7 @@ DataManager_test::DataManager_test(): dm_mongodb_work(NULL)
                 _conn.query("hpfeeds.auth_key");
         if((*cursor).itcount() == 0){
             cout<<"hpfeeds.auth_key collection does not exists and will be created"<<endl;
-            mongo::BSONObjBuilder b1,b2,b3;
+            mongo::BSONObjBuilder b1,b2,b3,b4;
             //aldo
             vector<string> publish1;
             publish1.insert(publish1.end(),"ch1");
@@ -61,12 +61,24 @@ DataManager_test::DataManager_test(): dm_mongodb_work(NULL)
             publish3.insert(publish3.end(),"ch2");
             vector<string> subscribe3;
             subscribe3.insert(subscribe3.end(),"ch1");
-            b3.append("secret","pwd");
-            b3.append("identifier","filippo");
-            b3.append("publish", publish2);
-            b3.append("subscribe", subscribe2);
+            b3.append("secret","1234");
+            b3.append("identifier","pippo");
+            b3.append("publish", publish3);
+            b3.append("subscribe", subscribe3);
             mongo::BSONObj u3 = b3.obj();
             _conn.insert("hpfeeds.auth_key",u3);
+            //maria
+            vector<string> publish4;
+            publish4.insert(publish4.end(),"ch1");
+            publish4.insert(publish4.end(),"ch2");
+            vector<string> subscribe4;
+            subscribe4.insert(subscribe4.end(),"ch1");
+            b4.append("secret","4321");
+            b4.append("identifier","maria");
+            b4.append("publish", publish4);
+            b4.append("subscribe", subscribe4);
+            mongo::BSONObj u4 = b4.obj();
+            _conn.insert("hpfeeds.auth_key",u4);
         }
     }catch(Poco::Exception& e){
         cout<<e.displayText()<<endl;
@@ -212,7 +224,7 @@ void DataManager_test::testMongoDB_GetSecretByNULLname()
 }
 void DataManager_test::testMongoDB_GetSecretByNOTEXISTINGname()
 {
-    CPPUNIT_ASSERT_THROW(dm_mongodb_work->getSecretbyName("pippo"),
+    CPPUNIT_ASSERT_THROW(dm_mongodb_work->getSecretbyName("inotexist"),
         Poco::Exception);
 }
 Test *DataManager_test::suite()

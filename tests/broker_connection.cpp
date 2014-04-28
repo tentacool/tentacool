@@ -15,6 +15,7 @@ using namespace Poco;
 string BrokerConnection::Broker_name = "@hp1";
 
 MessageRouter BrokerConnection::_router;
+ReadWriteLock BrokerConnection::_publishing_lock;
 
 BrokerConnection::BrokerConnection(const Net::StreamSocket& s, DataManager* data_manager) :
     Net::TCPServerConnection(s),
@@ -67,12 +68,16 @@ void BrokerConnection::run()
                 nbytes = _sock.receiveBytes(_inBuffer, sizeof(uint32_t) +
                                                         sizeof(uint8_t));
 
+                if(nbytes==0){
+                    isOpen = false;
+                    break;
+                }
                 //This is the total lenght, so it must be < MAXBUF
                 memcpy(&total_length,_inBuffer,sizeof(uint32_t));
                 //cout<<ntohl(total_length)<<endl;
                 if(ntohl(total_length) > MAXBUF){
                     //Prevent Buffer Overflow
-                    sendErrorMsg("1) Oversized Message -> Bad client",true);
+                    sendErrorMsg("1) Oversized Message -> Bad client",false);
                     isOpen = false;
                     break;
                 }
@@ -136,6 +141,7 @@ void BrokerConnection::run()
                                     if(how_much_read>=ntohl(msg->hdr.msglen)){
                                         sendErrorMsg("Invalid message -> Bad Client", true);
                                         how_much_read = 0;
+                                        isOpen = false;
                                         break;
                                     }
                                     //Get the channelname
@@ -150,6 +156,7 @@ void BrokerConnection::run()
                                                 " cannot subscribe to " + s_channel);
                                         sendErrorMsg("accessfail", true);
                                         how_much_read = 0;
+                                        isOpen = false;
                                         break;
                                     }
                                     _router.subscribe(s_channel,&_sock);
@@ -164,7 +171,7 @@ void BrokerConnection::run()
                                 break;
                             }
                             case OP_PUBLISH:{ ////////// PUBLISH //////////
-                                how_much_read = 4+1+1+1;
+                                how_much_read = 4+1+1+1; //header(5) + n_l + c_l
                                 uint8_t name_l, channel_l;
                                 _logger.debug("I've got a publish...");
                                 try{
@@ -175,10 +182,12 @@ void BrokerConnection::run()
                                                             sizeof(uint8_t));
                                     _sock.receiveBytes(_inBuffer + HEADER +
                                             sizeof(uint8_t), name_l);
-                                    string s_name((char*)_inBuffer + HEADER +
+                                    string s_name(
+                                            reinterpret_cast<char*>(_inBuffer)
+                                            + HEADER +
                                             sizeof(uint8_t), name_l);
                                     how_much_read += s_name.length();
-                                    if(how_much_read>=ntohl(msg->hdr.msglen)){
+                                    if(how_much_read >= ntohl(msg->hdr.msglen)){
                                         sendErrorMsg("PUBLISH: Invalid identifier -> Bad Client", true);
                                         how_much_read = 0;
                                         break;
@@ -194,13 +203,15 @@ void BrokerConnection::run()
                                     _sock.receiveBytes(_inBuffer + HEADER +
                                             sizeof(uint8_t) + name_l +
                                             sizeof(uint8_t), channel_l);
-                                    string s_channel(reinterpret_cast<char*>(_inBuffer) +
-                                            HEADER + sizeof(uint8_t) + name_l +
-                                            sizeof(uint8_t), channel_l);
+                                    string s_channel(
+                                            reinterpret_cast<char*>(_inBuffer)
+                                            + HEADER + sizeof(uint8_t) + name_l
+                                            + sizeof(uint8_t), channel_l);
                                     how_much_read += s_channel.length();
-                                    if(how_much_read >= ntohl(msg->hdr.msglen)){
+                                    if(how_much_read >= ntohl(total_length)){
                                         sendErrorMsg("PUBLISH: Invalid channel name -> Bad Client", true);
                                         how_much_read = 0;
+                                        isOpen = false;
                                         break;
                                     }
 
@@ -210,36 +221,52 @@ void BrokerConnection::run()
                                                 " cannot publish to " + s_channel);
                                         sendErrorMsg("accessfail", true);
                                         how_much_read = 0;
+                                        isOpen = false;
                                         break;
                                     }
-                                    _router.publish(s_channel, &_sock,
-                                            reinterpret_cast<u_char*>(_inBuffer),
-                                            HEADER + sizeof(name_l) + name_l +
-                                            sizeof(channel_l) + channel_l, true);
-                                    //Get the payload chunks
-                                    uint32_t payload_lenght = ntohl(total_length) -
+                                    uint32_t payload_length = ntohl(total_length) -
                                             HEADER - sizeof(name_l) - int(name_l) -
                                             sizeof(channel_l) - int(channel_l);
-                                    while(int(payload_lenght)>=CHUNK){
+                                    //GET PUBLISHING LOCK
+                                    _publishing_lock.w_lock();
+                                    //_publishing_lock.writeLock();
+                                    int thereRsub = -1;
+                                    thereRsub =_router.publish(s_channel,
+                                            &_sock,
+                                            reinterpret_cast<u_char*>(_inBuffer),
+                                            ntohl(total_length) - int(payload_length),
+                                            true);
+                                    if(thereRsub==-1){
+                                        isOpen = false;
+                                        break;
+                                    }
+                                    //Get the payload chunks
+
+                                    while(int(payload_length) >= CHUNK){
                                         //Reset _inBuffer
                                         memset(_inBuffer, 0x0, CHUNK);
                                         _sock.receiveBytes(_inBuffer, CHUNK);
                                         _router.publish(s_channel,&_sock,
                                                 reinterpret_cast<u_char*>(_inBuffer),
                                                 CHUNK, false);
-                                        payload_lenght -= CHUNK;
+                                        payload_length -= CHUNK;
                                     }
-                                    if(int(payload_lenght) != 0){
+                                    if(int(payload_length) != 0){
                                         //Reset _inBuffer
                                         memset(_inBuffer, 0x0, CHUNK);
-                                        _sock.receiveBytes(_inBuffer, payload_lenght);
+                                        _sock.receiveBytes(_inBuffer, int(payload_length));
                                         _router.publish(s_channel,&_sock,
                                                 reinterpret_cast<u_char*>(_inBuffer),
-                                                payload_lenght, false);
+                                                payload_length, false);
                                     }
+                                    //UNLOCK
+                                    _publishing_lock.w_unlock();
+                                    //_publishing_lock.unlock();
                                     how_much_read = 0;
                                 }catch(Poco::Exception& e){
                                     _logger.error("PUBLISH "+e.displayText());
+                                    _publishing_lock.w_unlock();
+                                    //_publishing_lock.unlock();
                                     //hpf_msg_delete(msg);
                                     how_much_read = 0;
                                     return;
@@ -264,15 +291,13 @@ void BrokerConnection::run()
     }
 }
 
-void BrokerConnection::sendErrorMsg(string msg, bool sendToPeer)
+void BrokerConnection::sendErrorMsg(string msg, bool logMsg)
 {
-    _logger.error(msg);
-    if(sendToPeer){
-        hpf_msg_t *m = hpf_msg_error(msg);
-        _logger.debug("Sending ERROR message to the client...");
-        _sock.sendBytes(m, ntohl(m->hdr.msglen));
-        hpf_msg_delete(m);
-    }
+    if(logMsg) _logger.error(msg);
+    hpf_msg_t *m = hpf_msg_error(msg);
+    _logger.debug("Sending ERROR message to the client...");
+    _sock.sendBytes(m, ntohl(m->hdr.msglen));
+    hpf_msg_delete(m);
     _state = S_ERROR;
 }
 

@@ -35,9 +35,9 @@ DataManager::DataManager( string filename):
         StringTokenizer pub_channels(fields[2],",",StringTokenizer::TOK_TRIM);
         StringTokenizer sub_channels(fields[3],",",StringTokenizer::TOK_TRIM);
         for(StringTokenizer::Iterator iter= pub_channels.begin();
-                iter!=pub_channels.end();iter++)	u._publish_chs.insert((*iter));
+                iter!=pub_channels.end();iter++)    u._publish_chs.insert((*iter));
         for(StringTokenizer::Iterator iter2= sub_channels.begin();
-                iter2!=sub_channels.end();iter2++)	u._subscribe_chs.insert(*iter2);
+                iter2!=sub_channels.end();iter2++)  u._subscribe_chs.insert(*iter2);
         _usersMap[fields[0]] = u;
     }
     _input.close();
@@ -95,7 +95,7 @@ const string DataManager::getSecretbyName(const string name)
 {
     //! Return the secret of the specified user
     //! \param Username the name of the user
-    if(name.empty()) throw  Poco::Exception("User not present!");
+    if(name.empty()) throw  Poco::Exception("Invalid User argument!");
     UserMap::const_iterator iter = _usersMap.find(name);
     if(iter!=_usersMap.end()){ //found it!
         return (*iter).second.secret;

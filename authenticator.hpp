@@ -2,7 +2,7 @@
 #define __AUTHENTICATOR__
 
 #include <stdint.h>
-#include <Poco/Random.h>
+#include "Poco/Random.h"
 
 //! Authenticate an user by challenge authentication (SHA1 of the password and a nonce)
 class Authenticator{
