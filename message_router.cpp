@@ -26,6 +26,10 @@ void MessageRouter::subscribe(HPChannel channel, StreamSocketPtr client)
     if (itr == channelset.end()) { //there isn't
         _map_mutex.w_lock();
         channelset.insert(client);
+        /////// INSERT NEW LOCK FOR THE CLIENT /////////
+        //ReadWriteLock* client_lock = ;
+        _map_client_mutex.insert(pair<StreamSocketPtr,ReadWriteLock*>(client,new ReadWriteLock()));
+        /////// FINE ////////
         _map_mutex.w_unlock();
     }
     _logger.debug("Channel "+channel+" has "+
@@ -42,7 +46,10 @@ void MessageRouter::unsubscribe(StreamSocketPtr client)
     {
         StreamSocketPtrSet::iterator itr = (it->second).find(client);
         if (itr != (it->second).end()) { //there is!
-        	(it->second).erase(client);
+            (it->second).erase(client);
+            /////// DELETE LOCK FOR THE CLIENT
+            _map_client_mutex.erase(client);
+            ///////
         }
     }
     _map_mutex.w_unlock();
@@ -72,4 +79,17 @@ int MessageRouter::publish(HPChannel channel, StreamSocketPtr caller,
         }
     }
     return 0;
+}
+
+SafeSet<ReadWriteLock*> MessageRouter::clientLock(string channel)
+{
+    SafeSet<ReadWriteLock*> lock_set;
+    //_map_mutex.w_lock();
+    _map_mutex.r_lock();
+    StreamSocketPtrSet& channelset = _channels[channel];
+    _map_mutex.r_unlock();
+    for (StreamSocketPtrSet::iterator it = channelset.begin(); it != channelset.end(); ++it)
+        lock_set.insert(_map_client_mutex.at((*it)));
+    return lock_set;
+    //_map_mutex.w_unlock();
 }

@@ -26,6 +26,9 @@ class MessageRouter {
 
     //! Map ReadWriteLock mutex
     ReadWriteLock _map_mutex;
+
+    //! Client's Mutex
+    map<StreamSocketPtr, ReadWriteLock*> _map_client_mutex;
 public:
     //! Constructor
     MessageRouter();
@@ -38,6 +41,9 @@ public:
 
     //! Publish a message from a client to subscribed clients
     int publish(HPChannel channel, StreamSocketPtr caller, u_char* message, uint32_t len, bool first);
+
+    //! Get the mutexes of the client subscribed to the specified channel
+    SafeSet<ReadWriteLock*> clientLock(string channel);
 };
 
 #endif

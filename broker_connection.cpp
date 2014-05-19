@@ -72,7 +72,7 @@ void BrokerConnection::run()
                     isOpen = false;
                     break;
                 }
-                //This is the total lenght, so it must be < MAXBUF
+                //This is the total length, so it must be < MAXBUF
                 memcpy(&total_length,_inBuffer,sizeof(uint32_t));
                 //cout<<ntohl(total_length)<<endl;
                 if(ntohl(total_length) > MAXBUF){
@@ -84,7 +84,7 @@ void BrokerConnection::run()
                 //GET OPCODE
                 memcpy(&op_code,_inBuffer+sizeof(uint32_t),sizeof(uint8_t));
                 if(op_code < 0 || op_code > OP_UNSUBSCRIBE){
-                    //Prevent Buffer Overflow
+                    //Invalid OpCode
                     sendErrorMsg("Invalid Op_code -> Bad client", true);
                     isOpen = false;
                     break;
@@ -173,6 +173,7 @@ void BrokerConnection::run()
                             case OP_PUBLISH:{ ////////// PUBLISH //////////
                                 how_much_read = 4+1+1+1; //header(5) + n_l + c_l
                                 uint8_t name_l, channel_l;
+                                SafeSet<ReadWriteLock*> lock_set;
                                 _logger.debug("I've got a publish...");
                                 try{
                                     //Get the name
@@ -228,14 +229,32 @@ void BrokerConnection::run()
                                             HEADER - sizeof(name_l) - int(name_l) -
                                             sizeof(channel_l) - int(channel_l);
                                     //GET PUBLISHING LOCK
-                                    _publishing_lock.w_lock();
+                                    //_publishing_lock.w_lock();
+                                    //GET CLIENTS LOCK
+                                    lock_set = _router.clientLock(s_channel);
+                                    for(SafeSet<ReadWriteLock*>::iterator it = lock_set.begin();
+                                            it != lock_set.end(); ++it){
+                                        (*it)->w_lock();
+                                        _logger.debug("*");
+                                    }
+
+                                    _logger.debug("["+s_name+"] ALL LOCKS ACQUIRED FOR CLIENTS IN "+s_channel);
                                     //_publishing_lock.writeLock();
-                                    _router.publish(s_channel, &_sock,
+                                    int thereRsub = -1;
+                                    thereRsub =_router.publish(s_channel,
+                                            &_sock,
                                             reinterpret_cast<u_char*>(_inBuffer),
                                             ntohl(total_length) - int(payload_length),
                                             true);
-                                    //Get the payload chunks
-
+                                    if(thereRsub==-1){
+                                        isOpen = false;
+                                        //_publishing_lock.w_unlock();
+                                        for(SafeSet<ReadWriteLock*>::reverse_iterator it = lock_set.rbegin();
+                                                it != lock_set.rend(); ++it ) (*it)->w_unlock();
+                                        _logger.debug("["+s_name+"] ALL LOCKS RELEASED FOR CLIENTS IN "+s_channel);
+                                        break;
+                                    }
+                                    //Get the payload chunks and publish them
                                     while(int(payload_length) >= CHUNK){
                                         //Reset _inBuffer
                                         memset(_inBuffer, 0x0, CHUNK);
@@ -254,13 +273,16 @@ void BrokerConnection::run()
                                                 payload_length, false);
                                     }
                                     //UNLOCK
-                                    _publishing_lock.w_unlock();
-                                    //_publishing_lock.unlock();
+                                    //_publishing_lock.w_unlock();
+                                    for(SafeSet<ReadWriteLock*>::reverse_iterator it = lock_set.rbegin();
+                                            it != lock_set.rend(); ++it ) (*it)->w_unlock();
+                                    _logger.debug("["+s_name+"] ALL LOCKS RELEASED FOR CLIENTS IN "+s_channel);
                                     how_much_read = 0;
                                 }catch(Poco::Exception& e){
                                     _logger.error("PUBLISH "+e.displayText());
-                                    _publishing_lock.w_unlock();
-                                    //_publishing_lock.unlock();
+                                    //_publishing_lock.w_unlock();
+                                    for(SafeSet<ReadWriteLock*>::reverse_iterator it = lock_set.rbegin();
+                                            it != lock_set.rend(); ++it ) (*it)->w_unlock();
                                     //hpf_msg_delete(msg);
                                     how_much_read = 0;
                                     return;
