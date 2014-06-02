@@ -37,7 +37,7 @@ public:
     void unsubscribe(StreamSocketPtr client);
 
     //! Publish a message from a client to subscribed clients
-    int publish(HPChannel channel, StreamSocketPtr caller, u_char* message, uint32_t len, bool first);
+    void publish(HPChannel channel, StreamSocketPtr caller, u_char* message, uint32_t len);
 };
 
 #endif

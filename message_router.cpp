@@ -6,7 +6,6 @@
 #include "safe_set.hpp"
 
 using namespace std;
-//template<typename T>Poco::Mutex  SafeSet<T>::_mutex;
 
 MessageRouter::MessageRouter() :
     _logger(Poco::Logger::get("HF_Broker"))
@@ -26,10 +25,6 @@ void MessageRouter::subscribe(HPChannel channel, StreamSocketPtr client)
     if (itr == channelset.end()) { //there isn't
         _map_mutex.w_lock();
         channelset.insert(client);
-        /////// INSERT NEW LOCK FOR THE CLIENT /////////
-        //ReadWriteLock* client_lock = ;
-        _map_client_mutex.insert(pair<StreamSocketPtr,ReadWriteLock*>(client,new ReadWriteLock()));
-        /////// FINE ////////
         _map_mutex.w_unlock();
     }
     _logger.debug("Channel "+channel+" has "+
@@ -38,58 +33,41 @@ void MessageRouter::subscribe(HPChannel channel, StreamSocketPtr client)
 
 void MessageRouter::unsubscribe(StreamSocketPtr client)
 {
-    _logger.debug("Unsubscribe for "+client->peerAddress().host().toString());
-
     _map_mutex.w_lock();
-
     for (ChannelMap::iterator it = _channels.begin(); it != _channels.end(); ++it)
     {
+        //Looking for the client in the set of StreamSocketPtr
         StreamSocketPtrSet::iterator itr = (it->second).find(client);
-        if (itr != (it->second).end()) { //there is!
+        if (itr != (it->second).end()) { //Found it!
             (it->second).erase(client);
-            /////// DELETE LOCK FOR THE CLIENT
-            _map_client_mutex.erase(client);
-            ///////
+            _logger.debug("Unsubscribed a client from channel "+it->first);
         }
     }
     _map_mutex.w_unlock();
 }
 
-int MessageRouter::publish(HPChannel channel, StreamSocketPtr caller,
-        u_char* message, uint32_t len, bool first)
+void MessageRouter::publish(HPChannel channel, StreamSocketPtr caller,
+        u_char* message, uint32_t len)
 {
-    if(first)
-    _logger.information("Publishing message from "+
-            caller->peerAddress().host().toString()+" on "+channel);
-    else _logger.information(".");
-
     _map_mutex.r_lock();
     StreamSocketPtrSet& channelset = _channels[channel];
-    _map_mutex.r_unlock();
 
     if (channelset.size() == 0) {
         _logger.information("Channel "+channel+" not present");
-        return -1;
+        _map_mutex.r_unlock();
+        return;
     }
-
-    StreamSocketPtrSet::iterator itr;
-    for (itr = channelset.begin(); itr != channelset.end(); ++itr) {
-        if (*itr != caller){
-            (*itr)->sendBytes(message, len);
+    try{
+        StreamSocketPtrSet::iterator itr;
+        for (itr = channelset.begin(); itr != channelset.end(); ++itr) {
+            if (*itr != caller){
+                (*itr)->sendBytes(message, len);
+                _logger.information("Published message from on "+channel);
+            }
         }
+    }catch(Poco::Exception& e){
+        _logger.error(e.displayText());
+        _map_mutex.r_unlock();
     }
-    return 0;
-}
-
-SafeSet<ReadWriteLock*> MessageRouter::clientLock(string channel)
-{
-    SafeSet<ReadWriteLock*> lock_set;
-    //_map_mutex.w_lock();
-    _map_mutex.r_lock();
-    StreamSocketPtrSet& channelset = _channels[channel];
     _map_mutex.r_unlock();
-    for (StreamSocketPtrSet::iterator it = channelset.begin(); it != channelset.end(); ++it)
-        lock_set.insert(_map_client_mutex.at((*it)));
-    return lock_set;
-    //_map_mutex.w_unlock();
 }

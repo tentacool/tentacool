@@ -121,6 +121,30 @@ void Integration_test::testAuthentication()
     sleep(1);
     delete a;
 }
+void Integration_test::testFailAuthentication()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+    a->insert(a->end(),"-m");
+    a->insert(a->end(),"file");
+    a->insert(a->end(),"-v");
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-f");
+    a->insert(a->end(),"data/auth_keys.dat");
+    pthread_t broker_thread = startBroker(a);
+    sleep(2); //Wait for Broker setup
+    Hpfeeds_client client;
+    client.connect();
+    sleep(1);
+    client.receive_info_message();
+    client.send_auth_message("aldo", "wrong_secret");
+    sleep(1);
+    client.receive_error_message();
+    client.disconnect();
+    stopBroker(broker_thread);
+    sleep(1);
+    delete a;
+}
 void Integration_test::testSubscribe()
 {
     Arguments* a = new Arguments();
@@ -344,7 +368,7 @@ void Integration_test::testWrongTotalLength()
     sleep(1);
     client_sub.receive_info_message();
     client_sub.send_auth_message("aldo", "s3cr3t");
-    client_sub.send_wrong_message(4,3,"wrong message");
+    client_sub.send_wrong_message(40,OP_PUBLISH,"wrong message");
     //SUBSCRIBER RECEIVE
     sleep(1);
     client_sub.receive_error_message();
@@ -532,6 +556,9 @@ Test *Integration_test::suite()
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testAuthentication",
                     &Integration_test::testAuthentication));
+    suiteOfTests->addTest(
+            new CppUnit::TestCaller<Integration_test>("testFailAuthentication",
+                    &Integration_test::testFailAuthentication));
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testSubscribe",
                     &Integration_test::testSubscribe));

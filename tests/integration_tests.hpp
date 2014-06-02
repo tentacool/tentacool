@@ -26,6 +26,7 @@ public:
     void testWrongOpCode();
     void testWrongTotalLength();
     void testAuthentication();
+    void testFailAuthentication();
     void testSubscribe();
     void testDoubleSubscribe();
     void testSubscribeNotAllowed();

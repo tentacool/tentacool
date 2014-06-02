@@ -236,8 +236,7 @@ int BrokerApplication::main(const std::vector<std::string>& args)
         if(m_helpRequested){
             displayHelp();
         }else{
-            string d("");
-            if(_debug_mode)d="[DEBUG_LOGGING_MODE]";
+            string debugTag("");
 
             //Setting Logger
             AutoPtr<SimpleFileChannel> sfChannel(new SimpleFileChannel);
@@ -257,7 +256,11 @@ int BrokerApplication::main(const std::vector<std::string>& args)
             logger.setChannel(pSplitter);
 
             //Set priority at least for INFO messages
-            logger.setLevel(Message::PRIO_INFORMATION);
+            if(_debug_mode){
+                debugTag="[DEBUG_LOGGING_MODE]";
+            }else{
+                logger.setLevel(Message::PRIO_INFORMATION);
+            }
 
             //Create File manager
             try{
@@ -272,7 +275,7 @@ int BrokerApplication::main(const std::vector<std::string>& args)
                 logger.error(exc.displayText());
                 return Poco::Util::ServerApplication::EXIT_IOERR;
             }
-            logger.information("HpfeedsBroker started "+d);
+            logger.information("HpfeedsBroker started "+debugTag);
 
             // Create a server socket in order to listen to the port
             Net::ServerSocket svs(port);
