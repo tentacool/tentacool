@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include "integration_tests.hpp"
 #include "hpfeeds_client.hpp"
 #include "broker.hpp"
@@ -62,8 +66,10 @@ void Integration_test::testConnectDisconnect()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-f");
@@ -83,8 +89,10 @@ void Integration_test::testDifferentPortAndName()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-f");
     a->insert(a->end(),"data/auth_keys.dat");
@@ -102,8 +110,10 @@ void Integration_test::testAuthentication()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-f");
@@ -125,8 +135,10 @@ void Integration_test::testFailAuthentication()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-f");
@@ -149,8 +161,10 @@ void Integration_test::testSubscribe()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-f");
@@ -173,8 +187,10 @@ void Integration_test::testDoubleSubscribe()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-f");
@@ -197,8 +213,10 @@ void Integration_test::testSubscribeNotAllowed()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-f");
@@ -222,8 +240,10 @@ void Integration_test::testPublish()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-f");
@@ -257,8 +277,10 @@ void Integration_test::testPublishNoChannel()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-f");
@@ -292,8 +314,10 @@ void Integration_test::testPublishNotAllowed()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-f");
@@ -327,8 +351,10 @@ void Integration_test::testWrongOpCode()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-f");
@@ -354,8 +380,10 @@ void Integration_test::testWrongTotalLength()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-f");
@@ -381,8 +409,10 @@ void Integration_test::testPublishBigMessage()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-f");
@@ -423,8 +453,10 @@ void Integration_test::testPublishConcurrency()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-f");
@@ -550,9 +582,11 @@ Test *Integration_test::suite()
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testDifferentPortAndName",
                     &Integration_test::testDifferentPortAndName));
+#ifdef __WITH_MONGO__
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testWithMongo",
                     &Integration_test::testWithMongo));
+#endif
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testAuthentication",
                     &Integration_test::testAuthentication));

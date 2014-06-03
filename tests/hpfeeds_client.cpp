@@ -154,18 +154,6 @@ void Hpfeeds_client::send_subscribe_message(string name, string channel)
     hpf_msg_delete(sub);
 }
 
-//void Hpfeeds_client::send_wrong_message(uint32_t total_length, uint8_t op_code, string data)
-//{
-//    hpf_msg_t * wrong = hpf_msg_new();
-//    if (!wrong)
-//          throw Poco::Exception("Memory allocation fault");
-//    wrong->hdr.opcode = op_code;
-//    hpf_msg_add_payload(&wrong, reinterpret_cast<const u_char*>(data.data()),
-//                                                            data.length());
-//    wrong->hdr.msglen = htonl(total_length);
-//    _sock->sendBytes(wrong, ntohl(wrong->hdr.msglen));
-//    hpf_msg_delete(wrong);
-//}
 void Hpfeeds_client::send_wrong_message(uint32_t total_length, uint8_t op_code, string data)
 {
     hpf_msg_t * wrong = hpf_msg_new();

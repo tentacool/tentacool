@@ -12,7 +12,9 @@ class DataManager_test : public TestFixture
 {
 private:
     DataManager* dm_mongodb_work;
+#ifdef __WITH_MONGO__
     mongo::DBClientConnection _conn;
+#endif
     string filename;
     string nullstring;
     string too_long_file;
@@ -38,7 +40,7 @@ public:
     void testFile_getSecret();
 
     void testNotExistingFile();
-
+#ifdef __WITH_MONGO__
     void testMongoDB();
 
     void testMongoDB_wrongIP();
@@ -70,7 +72,7 @@ public:
     void testMongoDB_GetSecretByNULLname();
 
     void testMongoDB_GetSecretByNOTEXISTINGname();
-
+#endif
     static Test *suite();
 };
 

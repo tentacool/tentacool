@@ -133,5 +133,5 @@ fi
 #		 echo
 #		 exit 1
 #	fi
-
+AC_CONFIG_SUBDIRS([tests])
 AC_OUTPUT

@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include "data_manager_tests.hpp"
 #include "data_manager.hpp"
 #include <cppunit/TestListener.h>
@@ -14,7 +18,9 @@
 #include <cppunit/TestRunner.h>
 #include <cppunit/ui/text/TestRunner.h>
 #include <cppunit/extensions/HelperMacros.h>
+#ifdef __WITH_MONGO__
 #include <mongo/client/dbclient.h>
+#endif
 
 using namespace CppUnit;
 using namespace std;
@@ -23,6 +29,7 @@ DataManager_test::DataManager_test(): dm_mongodb_work(NULL)
 {
     string errmsg;
     try{
+#ifdef __WITH_MONGO__
         if(!_conn.connect("localhost",errmsg))
                 throw Poco::Exception("Mongodb connection fail. "
                         "Check if mongodb is running.");
@@ -80,13 +87,16 @@ DataManager_test::DataManager_test(): dm_mongodb_work(NULL)
             mongo::BSONObj u4 = b4.obj();
             _conn.insert("hpfeeds.auth_key",u4);
         }
+#endif
     }catch(Poco::Exception& e){
         cout<<e.displayText()<<endl;
+        exit(-1);
     }
 }
 DataManager_test::~DataManager_test(){
-    //cout<<"Dropping the tests support db..."<<endl;
+#ifdef __WITH_MONGO__
     _conn.dropDatabase("hpfeeds");
+#endif
 }
 void DataManager_test::setUp()
 {
@@ -95,8 +105,10 @@ void DataManager_test::setUp()
         malformed_file = "data/malformed_file.dat";
         not_existing_file = "data/iamnotexists.boh";
         too_long_file = "data/toolong_line.dat";
+#ifdef __WITH_MONGO__
         dm_mongodb_work = new DataManager("localhost", "27017", "hpfeeds",
                 "auth_key");
+#endif
     } catch (Poco::Exception& e) {
         cout << e.displayText() << endl;
     }
@@ -104,7 +116,9 @@ void DataManager_test::setUp()
 
 void DataManager_test::tearDown()
 {
+#ifdef __WITH_MONGO__
     delete dm_mongodb_work;
+#endif
 }
 
 void DataManager_test::testFileMode()
@@ -133,7 +147,7 @@ void DataManager_test::testNotExistingFile()
     CPPUNIT_ASSERT_THROW(DataManager data_manager(not_existing_file),
         Poco::Exception);
 }
-
+#ifdef __WITH_MONGO__
 void DataManager_test::testMongoDB()
 {
     CPPUNIT_ASSERT_NO_THROW(
@@ -227,6 +241,7 @@ void DataManager_test::testMongoDB_GetSecretByNOTEXISTINGname()
     CPPUNIT_ASSERT_THROW(dm_mongodb_work->getSecretbyName("inotexist"),
         Poco::Exception);
 }
+#endif
 Test *DataManager_test::suite()
 {
     TestSuite *suiteOfTests = new CppUnit::TestSuite("DataManager_test");
@@ -245,6 +260,7 @@ Test *DataManager_test::suite()
     suiteOfTests->addTest(
         new CppUnit::TestCaller<DataManager_test>("testNotExistingFile",
                 &DataManager_test::testNotExistingFile));
+#ifdef __WITH_MONGO__
     suiteOfTests->addTest(
         new CppUnit::TestCaller<DataManager_test>("testMongoDB",
                 &DataManager_test::testMongoDB));
@@ -304,6 +320,6 @@ Test *DataManager_test::suite()
         new CppUnit::TestCaller<DataManager_test>(
                 "testMongoDB_GetSecretByNOTEXISTINGname",
                 &DataManager_test::testMongoDB_GetSecretByNOTEXISTINGname));
-
+#endif
 return suiteOfTests;
 }
