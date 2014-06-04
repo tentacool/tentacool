@@ -3,6 +3,7 @@
 #include "Poco/AutoPtr.h"
 #include <fstream>
 #include <exception>
+#include <memory>
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -11,6 +12,7 @@
 #define MAX_FIELD_LENGTH 256
 
 using namespace Poco;
+using namespace std;
 
 //!File Constructor
 //!\brief Initialize the users data structures reading from file
@@ -65,9 +67,8 @@ DataManager::DataManager(const string mongo_ip, const string mongo_port,
     if(!_conn.connect(_mongoip,errmsg))
         throw Poco::Exception("Mongodb connection fail");
     _logger.information("Connected with mongodb");
-
-    auto_ptr<mongo::DBClientCursor> cursor =
-            _conn.query(_mongo_db+"."+_mongo_collection);
+    unique_ptr<mongo::DBClientCursor> cursor =
+            (move(_conn.query(_mongo_db+"."+_mongo_collection)));
 
     while(cursor->more()){ //for every document
         mongo::BSONObj p = cursor->next();

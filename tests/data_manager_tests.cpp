@@ -4,6 +4,7 @@
 
 #include "data_manager_tests.hpp"
 #include "data_manager.hpp"
+#include <memory>
 #include <cppunit/TestListener.h>
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
@@ -33,8 +34,8 @@ DataManager_test::DataManager_test(): dm_mongodb_work(NULL)
         if(!_conn.connect("localhost",errmsg))
                 throw Poco::Exception("Mongodb connection fail. "
                         "Check if mongodb is running.");
-        auto_ptr<mongo::DBClientCursor> cursor =
-                _conn.query("hpfeeds.auth_key");
+        unique_ptr<mongo::DBClientCursor> cursor =
+                (move(_conn.query("hpfeeds.auth_key")));
         if((*cursor).itcount() == 0){
             cout<<"hpfeeds.auth_key collection does not exists and will be created"<<endl;
             mongo::BSONObjBuilder b1,b2,b3,b4;

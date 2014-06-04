@@ -6,6 +6,8 @@ AC_PROG_CXX
 AM_PROG_CC_C_O
 AC_CONFIG_FILES([Makefile])
 
+
+
 #check pthread library
 AC_CHECK_LIB([pthread],[pthread_create], [], AC_MSG_ERROR([unable to find the pthread_create() function]))
 
@@ -95,13 +97,31 @@ AC_ARG_WITH(cppunit,
 	CPPFLAGS="$CPPFLAGS -I${withval}/include/cppunit"
 	LDFLAGS="$LDFLAGS -L${withval}/lib"
 ],[
-        #Default lib and headers folder
-	CPPFLAGS="$CPPFLAGS -I/usr/local/include/cppunit"
-	LDFLAGS="$LDFLAGS -L/usr/local/lib"
+        #If not specified, get lib and headers folder
+
+        CPPUNIT_CFLAGS=`cppunit-config --cflags`
+	CPPFLAGS="$CPPFLAGS $CPPUNIT_CFLAGS"
+        if test x$CPPUNIT_CFLAGS != x; then
+              echo ""
+        else
+              AC_MSG_ERROR([unable to find the CppUnit])
+        fi
+
+        CPPUNIT_LIBS=`cppunit-config --libs`
+	LIBS="$LIBS $CPPUNIT_LIBS"
+        #LD= echo $CPPUNIT_LIBS | awk '{print $1;}'
+        #LDFLAGS="$LDFLAGS $LD"
+        if test x"$CPPUNIT_LIBS" != x; then
+              echo "checking for -lcppunit... yes"
+        else
+              AC_MSG_ERROR([unable to find the CppUnit])
+        fi
+        #cppunit_version='$cppunit-config --version'
+
 ])
 
-AC_CHECK_LIB([cppunit],[main], [], AC_MSG_ERROR([unable to find the CppUnit]))
-
+#AC_CHECK_LIB([cppunit],[main], [], AC_MSG_ERROR([unable to find the CppUnit]))
+#AC_TRY_LINK([#include <cppunit/TestResult.h>],[main],[],AC_MSG_ERROR([unable to find the CppUnit]))
 
 #AC_MSG_CHECKING(for MongoClient)
 #	AC_TRY_COMPILE([

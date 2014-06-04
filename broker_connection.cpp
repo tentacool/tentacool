@@ -258,7 +258,9 @@ void BrokerConnection::sendErrorMsg(string msg, bool sendToClient)
         _sock.sendBytes(m, ntohl(m->hdr.msglen));
         hpf_msg_delete(m);
     }
-    _state = S_ERROR;
+    // If it's subscribed to a channel i have to unsubscribe, so i do not
+    // modify its state
+    if(_state != S_SUBSCRIBED) _state = S_ERROR;
 }
 
 void BrokerConnection::authUser()
