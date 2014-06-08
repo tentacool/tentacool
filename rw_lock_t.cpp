@@ -19,7 +19,7 @@ void ReadWriteLock::r_lock()
 {
     pthread_mutex_lock(&class_mutex);
     //while(NoOfWriters>0 || NoOfWritersWaiting>0) //Writer Preference
-    while(NoOfWriters>0){
+    while (NoOfWriters>0) {
         pthread_cond_wait(&reader_gate, &class_mutex);
     }
     NoOfReaders++;
@@ -30,7 +30,7 @@ void ReadWriteLock::w_lock()
 {
     pthread_mutex_lock(&class_mutex);
     NoOfWritersWaiting++;
-    while(NoOfReaders>0 || NoOfWriters>0){
+    while (NoOfReaders>0 || NoOfWriters>0) {
         pthread_cond_wait(&writer_gate, &class_mutex);
     }
     NoOfWritersWaiting--; NoOfWriters++;
@@ -41,7 +41,7 @@ void ReadWriteLock::r_unlock()
 {
     pthread_mutex_lock(&class_mutex);
     NoOfReaders--;
-    if(NoOfReaders==0 && NoOfWritersWaiting>0)
+    if (NoOfReaders == 0 && NoOfWritersWaiting > 0)
         pthread_cond_signal(&writer_gate);
     pthread_mutex_unlock(&class_mutex);
 }
@@ -50,7 +50,7 @@ void ReadWriteLock::w_unlock()
 {
     pthread_mutex_lock(&class_mutex);
     NoOfWriters--;
-    if(NoOfWritersWaiting>0)
+    if(NoOfWritersWaiting > 0)
         pthread_cond_signal(&writer_gate);
     //else //Writer Preference - don't signal readers unless no writers
     pthread_cond_broadcast(&reader_gate);

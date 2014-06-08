@@ -22,10 +22,12 @@ void Hpfeeds_test::setUp()
 {
 
 }
+
 void Hpfeeds_test::tearDown()
 {
 
 }
+
 uint32_t Hpfeeds_test::genNonce(int seed){
     Poco::Random _prng;
     if(seed > 0){
@@ -35,13 +37,16 @@ uint32_t Hpfeeds_test::genNonce(int seed){
     }
     return _prng.next();
 }
+
 void Hpfeeds_test::testCreatePublishErr()
 {
     u_char* data = NULL;
     hpf_msg_t*  pub = NULL;
-    CPPUNIT_ASSERT_THROW(pub=hpf_msg_publish("aldo","ch1", data, 0),Poco::Exception);
+    CPPUNIT_ASSERT_THROW(pub=hpf_msg_publish("aldo","ch1", data, 0),
+                                                           Poco::Exception);
     hpf_msg_delete(pub);
 }
+
 void Hpfeeds_test::testCreatePublishErr2()
 {
     vector<u_char> publish_data;
@@ -52,16 +57,18 @@ void Hpfeeds_test::testCreatePublishErr2()
             publish_data.data(), 0),Poco::Exception);
     hpf_msg_delete(pub);
 }
+
 void Hpfeeds_test::testCreateInfoMsg()
 {
     //memcmp returns 0 -> equal
     string broker_name ="@hp1";
     hpf_msg_t*  info_1 = hpf_msg_info(genNonce(), broker_name);
     hpf_msg_t*  info_2 = hpf_msg_info(genNonce(1234), broker_name);
-    CPPUNIT_ASSERT(memcmp(info_1, info_2,/*sizeof(info_1)*/ ntohl(info_1->hdr.msglen))!=0);
+    CPPUNIT_ASSERT(memcmp(info_1, info_2, ntohl(info_1->hdr.msglen))!=0);
     hpf_msg_delete(info_1);
     hpf_msg_delete(info_2);
 }
+
 void Hpfeeds_test::testMsgData(){
     string broker_name ="@hp1";
         hpf_msg_t*  info = hpf_msg_info(genNonce(), broker_name);
@@ -69,6 +76,7 @@ void Hpfeeds_test::testMsgData(){
                        hpf_msg_getsize(info)==14);
         hpf_msg_delete(info);
 }
+
 void Hpfeeds_test::testCreateErrMsg(){
     //memcmp returns 0 -> equal
     string err_msg ="There was an error";
@@ -78,6 +86,7 @@ void Hpfeeds_test::testCreateErrMsg(){
     hpf_msg_delete(err_1);
     hpf_msg_delete(err_2);
 }
+
 void Hpfeeds_test::testCreatePublishMsg(){
     string p  = "A lot of interesting data";
     vector<u_char> publish_data;
@@ -92,6 +101,7 @@ void Hpfeeds_test::testCreatePublishMsg(){
     hpf_msg_delete(pub_1);
     hpf_msg_delete(pub_2);
 }
+
 void Hpfeeds_test::testCreateSubscribeMsg()
 {
     hpf_msg_t*  sub_1 = hpf_msg_subscribe("aldo","ch1");
@@ -100,6 +110,7 @@ void Hpfeeds_test::testCreateSubscribeMsg()
     hpf_msg_delete(sub_1);
     hpf_msg_delete(sub_2);
 }
+
 void Hpfeeds_test::testCreateAuthMsg()
 {
     hpf_msg_t*  auth_1 = hpf_msg_auth(1234, "aldo", "s3cr3t");
@@ -108,6 +119,7 @@ void Hpfeeds_test::testCreateAuthMsg()
     hpf_msg_delete(auth_1);
     hpf_msg_delete(auth_2);
 }
+
 Test *Hpfeeds_test::suite()
 {
     TestSuite *suiteOfTests = new CppUnit::TestSuite( "Hpfeeds_test" );

@@ -34,7 +34,8 @@ void MessageRouter::subscribe(HPChannel channel, StreamSocketPtr client)
 void MessageRouter::unsubscribe(StreamSocketPtr client)
 {
     _map_mutex.w_lock();
-    for (ChannelMap::iterator it = _channels.begin(); it != _channels.end(); ++it)
+    for (ChannelMap::iterator it = _channels.begin(); it != _channels.end();
+            ++it)
     {
         //Looking for the client in the set of StreamSocketPtr
         StreamSocketPtrSet::iterator itr = (it->second).find(client);
@@ -60,12 +61,12 @@ void MessageRouter::publish(HPChannel channel, StreamSocketPtr caller,
     try{
         StreamSocketPtrSet::iterator itr;
         for (itr = channelset.begin(); itr != channelset.end(); ++itr) {
-            if (*itr != caller){
+            if (*itr != caller) {
                 (*itr)->sendBytes(message, len);
                 _logger.information("Published message from on "+channel);
             }
         }
-    }catch(Poco::Exception& e){
+    } catch (Poco::Exception& e) {
         _logger.error(e.displayText());
         _map_mutex.r_unlock();
     }

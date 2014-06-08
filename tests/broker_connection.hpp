@@ -34,7 +34,13 @@ typedef enum {
 } hpfeeds_server_state_t;
 
 //! This Map has the max size of every message type (op_code)
-static map<int, uint32_t> message_sizes;
+static map<int, uint32_t>
+        message_sizes = {{OP_ERROR,MAXBUF},
+                        {OP_INFO, HEADER + 1 + 256 + 20},
+                        {OP_AUTH, HEADER + 1 + 256 + 20},
+                        {OP_PUBLISH, MAXBUF},
+                        {OP_SUBSCRIBE, HEADER + 2 + 256 * 2},
+                        {OP_UNSUBSCRIBE, HEADER + 2 + 256 * 2}};
 
 //! BrokerConnection managed the main logic of the broker
 class BrokerConnection : public Poco::Net::TCPServerConnection {

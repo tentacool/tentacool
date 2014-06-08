@@ -16,7 +16,6 @@ template <class T> class SafeSet {
 
 public:
     typedef typename set_t::iterator iterator;
-    typedef typename set_t::reverse_iterator reverse_iterator;
 
     SafeSet()
     {
@@ -40,24 +39,10 @@ public:
         _mutex.r_unlock();
         return i;
     }
-    reverse_iterator rbegin()
-    { //! thread-safe rbegin()
-        _mutex.r_lock();
-        reverse_iterator i= _unsafe_set.rbegin();
-        _mutex.r_unlock();
-        return i;
-    }
     iterator end()
     { //! thread-safe end()
         _mutex.r_lock();
         iterator i= _unsafe_set.end();
-        _mutex.r_unlock();
-        return i;
-    }
-    reverse_iterator rend()
-    { //! thread-safe rend()
-        _mutex.r_lock();
-        reverse_iterator i= _unsafe_set.rend();
         _mutex.r_unlock();
         return i;
     }

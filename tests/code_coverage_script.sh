@@ -2,6 +2,30 @@
 LOCAL_PATH="../"
 DIR="code_coverage"
 
+
+#CHECK for mongo option
+if [  -n "$1" ];
+then
+        if [  $1 = "mongo" ];
+        then
+                MONGO="-D__WITH_MONGO__"
+                echo "[Code Coverage] Starting building with mongo option ..."
+        elif [  $1 = "file" ];
+        then
+                #MONGO = " "
+                echo "[Code Coverage] Starting building ..."
+        else
+                echo "[Code Coverage] Invalid argument!"
+                echo "[Code Coverage] Usage: Use 'mongo' as argument to get the code coverage of the mongo version of the broker"
+                echo "                       Use 'file' as argument to get the code coverage of the mongo-less version of the broker"
+                exit
+        fi
+else
+        echo "[Code Coverage] Usage: Use 'mongo' as argument to get the code coverage of the mongo version of the broker"
+        echo "                       Use 'file' as argument to get the code coverage of the mongo-less version of the broker"
+        exit
+fi
+
 if [ ! -d $DIR ];
 then
         echo "[Code Coverage] Creating code_coverage dir..."
@@ -11,27 +35,8 @@ fi
 echo "[Code Coverage] Entering folder..."
 cd code_coverage
 
-#if [ ! -d data ];
-#then
-#        echo "[Code Coverage] Copying data needed..."
-#        cp -avr ../data/ .
-#fi
         echo "[Code Coverage] Copying data needed..."
         cp -avr ../data/ .
-#CHECK for mongo option
-if [  -n "$1" ];
-then
-        if [  $1 = "mongo" ];
-        then
-                MONGO="-D__WITH_MONGO__"
-                echo "[Code Coverage] Starting building with mongo option ..."
-        else
-                #MONGO = " "
-                echo "[Code Coverage] Starting building ..."
-        fi
-else
-echo "[Code Coverage] Starting building ..."
-fi
 
 #Building file: authenticator.cpp
 csg++ $MONGO -I/usr/local/include/Poco -I/usr/local/include/Poco/Net -I/usr/local/include/Poco/Util -I/usr/local/include/cppunit -I/usr/include/mongo/client -O3 -g -std=c++0x -Wall -Werror -c -fmessage-length=0 -MMD -MP -MF"authenticator.d" -MT"authenticator.d" -o "authenticator.o" $LOCAL_PATH"authenticator.cpp"

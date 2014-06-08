@@ -29,7 +29,7 @@ using namespace std;
 DataManager_test::DataManager_test(): dm_mongodb_work(NULL)
 {
     string errmsg;
-    try{
+    try {
 #ifdef __WITH_MONGO__
         if(!_conn.connect("localhost",errmsg))
                 throw Poco::Exception("Mongodb connection fail. "
@@ -37,7 +37,8 @@ DataManager_test::DataManager_test(): dm_mongodb_work(NULL)
         unique_ptr<mongo::DBClientCursor> cursor =
                 (move(_conn.query("hpfeeds.auth_key")));
         if((*cursor).itcount() == 0){
-            cout<<"hpfeeds.auth_key collection does not exists and will be created"<<endl;
+            cout<<"hpfeeds.auth_key collection does not exists and will be"
+                    "created"<<endl;
             mongo::BSONObjBuilder b1,b2,b3,b4;
             //aldo
             vector<string> publish1;
@@ -89,16 +90,18 @@ DataManager_test::DataManager_test(): dm_mongodb_work(NULL)
             _conn.insert("hpfeeds.auth_key",u4);
         }
 #endif
-    }catch(Poco::Exception& e){
+    } catch(Poco::Exception& e) {
         cout<<e.displayText()<<endl;
         exit(-1);
     }
 }
+
 DataManager_test::~DataManager_test(){
 #ifdef __WITH_MONGO__
     _conn.dropDatabase("hpfeeds");
 #endif
 }
+
 void DataManager_test::setUp()
 {
     try {
@@ -106,6 +109,7 @@ void DataManager_test::setUp()
         malformed_file = "data/malformed_file.dat";
         not_existing_file = "data/iamnotexists.boh";
         too_long_file = "data/toolong_line.dat";
+        black_rows_file = "data/blank_rows.dat";
 #ifdef __WITH_MONGO__
         dm_mongodb_work = new DataManager("localhost", "27017", "hpfeeds",
                 "auth_key");
@@ -135,6 +139,11 @@ void DataManager_test::testFile_malformedFile()
 void DataManager_test::testFile_tooLongFile()
 {
     CPPUNIT_ASSERT_THROW(DataManager dm_file(too_long_file);,Poco::Exception);
+}
+
+void DataManager_test::testFile_blankRows()
+{
+    CPPUNIT_ASSERT_NO_THROW(DataManager dm_file(black_rows_file););
 }
 
 void DataManager_test::testFile_getSecret()
@@ -242,6 +251,81 @@ void DataManager_test::testMongoDB_GetSecretByNOTEXISTINGname()
     CPPUNIT_ASSERT_THROW(dm_mongodb_work->getSecretbyName("inotexist"),
         Poco::Exception);
 }
+#else
+void DataManager_test::testFileSubscribe_present()
+{
+    DataManager dm_file(filename);
+    CPPUNIT_ASSERT(dm_file.may_subscribe("aldo", "ch1"));
+}
+
+void DataManager_test::testFilePublish_present()
+{
+    DataManager dm_file(filename);
+    CPPUNIT_ASSERT(dm_file.may_publish("aldo", "ch1"));
+}
+
+void DataManager_test::testFileSubscribe_user_not_present()
+{
+    DataManager dm_file(filename);
+    CPPUNIT_ASSERT_THROW(dm_file.may_subscribe("mark", "ch1"),
+        Poco::Exception);
+}
+
+void DataManager_test::testFilePublish_user_not_present()
+{
+    DataManager dm_file(filename);
+    CPPUNIT_ASSERT_THROW(dm_file.may_publish("joy", "ch1"),
+        Poco::Exception);
+}
+
+void DataManager_test::testFileSubscribe_channel_not_present()
+{
+    DataManager dm_file(filename);
+    CPPUNIT_ASSERT(dm_file.may_subscribe("aldo", "missingchannel") == false);
+}
+
+void DataManager_test::testFilePublish_channel_not_present()
+{
+    DataManager dm_file(filename);
+    CPPUNIT_ASSERT(dm_file.may_publish("aldo", "channel?") == false);
+}
+
+void DataManager_test::testFileSubscribe_name_null()
+{
+    DataManager dm_file(filename);
+    CPPUNIT_ASSERT_THROW(dm_file.may_subscribe(nullstring, "channel?"),
+        Poco::Exception);
+}
+void DataManager_test::testFilePublish_name_null()
+{
+    DataManager dm_file(filename);
+    CPPUNIT_ASSERT_THROW(dm_file.may_publish(nullstring, "channel?"),
+        Poco::Exception);
+}
+void DataManager_test::testFileSubscribe_channel_null()
+{
+    DataManager dm_file(filename);
+    CPPUNIT_ASSERT_THROW(dm_file.may_subscribe("aldo", nullstring),
+        Poco::Exception);
+}
+void DataManager_test::testFilePublish_channel_null()
+{
+    DataManager dm_file(filename);
+    CPPUNIT_ASSERT_THROW(dm_file.may_publish("aldo", nullstring),
+        Poco::Exception);
+}
+void DataManager_test::testFile_GetSecretByNULLname()
+{
+    DataManager dm_file(filename);
+    CPPUNIT_ASSERT_THROW(dm_file.getSecretbyName(nullstring),
+        Poco::Exception);
+}
+void DataManager_test::testFile_GetSecretByNOTEXISTINGname()
+{
+    DataManager dm_file(filename);
+    CPPUNIT_ASSERT_THROW(dm_file.getSecretbyName("inotexist"),
+        Poco::Exception);
+}
 #endif
 Test *DataManager_test::suite()
 {
@@ -256,6 +340,9 @@ Test *DataManager_test::suite()
         new CppUnit::TestCaller<DataManager_test>("testFile_tooLongFile",
                 &DataManager_test::testFile_tooLongFile));
     suiteOfTests->addTest(
+        new CppUnit::TestCaller<DataManager_test>("testFile_blankRows",
+                &DataManager_test::testFile_blankRows));
+    suiteOfTests->addTest(
         new CppUnit::TestCaller<DataManager_test>("testFile_getSecret",
                 &DataManager_test::testFile_getSecret));
     suiteOfTests->addTest(
@@ -269,7 +356,8 @@ Test *DataManager_test::suite()
         new CppUnit::TestCaller<DataManager_test>("testMongoDB_wrongIP",
                 &DataManager_test::testMongoDB_wrongIP));
     suiteOfTests->addTest(
-        new CppUnit::TestCaller<DataManager_test>("testMongoDB_wrongCollection",
+        new CppUnit::TestCaller<DataManager_test>
+        ("testMongoDB_wrongCollection",
                 &DataManager_test::testMongoDB_wrongCollection));
     suiteOfTests->addTest(
         new CppUnit::TestCaller<DataManager_test>("testMongoDB_wrongDB",
@@ -321,6 +409,54 @@ Test *DataManager_test::suite()
         new CppUnit::TestCaller<DataManager_test>(
                 "testMongoDB_GetSecretByNOTEXISTINGname",
                 &DataManager_test::testMongoDB_GetSecretByNOTEXISTINGname));
+#else
+    suiteOfTests->addTest(
+        new CppUnit::TestCaller<DataManager_test>(
+                "testFileSubscribe_present",
+                &DataManager_test::testFileSubscribe_present));
+    suiteOfTests->addTest(
+        new CppUnit::TestCaller<DataManager_test>("testFilePublish_present",
+                &DataManager_test::testFilePublish_present));
+    suiteOfTests->addTest(
+        new CppUnit::TestCaller<DataManager_test>(
+                "testFileSubscribe_user_not_present",
+                &DataManager_test::testFileSubscribe_user_not_present));
+    suiteOfTests->addTest(
+        new CppUnit::TestCaller<DataManager_test>(
+                "testFilePublish_user_not_present",
+                &DataManager_test::testFilePublish_user_not_present));
+    suiteOfTests->addTest(
+        new CppUnit::TestCaller<DataManager_test>(
+                "testFileSubscribe_channel_not_present",
+                &DataManager_test::testFileSubscribe_channel_not_present));
+    suiteOfTests->addTest(
+        new CppUnit::TestCaller<DataManager_test>(
+                "testFilePublish_channel_not_present",
+                &DataManager_test::testFilePublish_channel_not_present));
+    suiteOfTests->addTest(
+        new CppUnit::TestCaller<DataManager_test>(
+                "testFileSubscribe_name_null",
+                &DataManager_test::testFileSubscribe_name_null));
+    suiteOfTests->addTest(
+        new CppUnit::TestCaller<DataManager_test>(
+                "testFilePublish_name_null",
+                &DataManager_test::testFilePublish_name_null));
+    suiteOfTests->addTest(
+        new CppUnit::TestCaller<DataManager_test>(
+                "testFileSubscribe_channel_null",
+                &DataManager_test::testFileSubscribe_channel_null));
+    suiteOfTests->addTest(
+        new CppUnit::TestCaller<DataManager_test>(
+                "testFilePublish_channel_null",
+                &DataManager_test::testFilePublish_channel_null));
+    suiteOfTests->addTest(
+        new CppUnit::TestCaller<DataManager_test>(
+                "testFile_GetSecretByNULLname",
+                &DataManager_test::testFile_GetSecretByNULLname));
+    suiteOfTests->addTest(
+        new CppUnit::TestCaller<DataManager_test>(
+                "testFile_GetSecretByNOTEXISTINGname",
+                &DataManager_test::testFile_GetSecretByNOTEXISTINGname));
 #endif
 return suiteOfTests;
 }

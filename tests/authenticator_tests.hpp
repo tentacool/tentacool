@@ -20,21 +20,13 @@ private:
 public:
 
     void setUp();
-
     void tearDown();
-
     string getHash(uint32_t nonce, string password);
-
     void testNonce();
-
     void testNonceSeed();
-
     void testAuthenticate();
-
     void testAuthenticateChangeNonce();
-
     static Test *suite();
-
 };
 
 #endif

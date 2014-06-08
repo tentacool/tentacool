@@ -4,7 +4,7 @@
 #include <Poco/Net/SocketStream.h>
 #include "hpfeeds.hpp"
 #define CHUNK 1024
-#define MAX_BUF 10*1024
+#define MAX_BUF 10*1024 + 5
 
 using namespace std;
 using namespace Poco;
@@ -16,7 +16,8 @@ public:
     ~Hpfeeds_client();
     void connect();
     void send_auth_message(string name, string secret);
-    void send_wrong_message(uint32_t total_length, uint8_t op_code, string data);
+    void send_wrong_message(uint32_t total_length, uint8_t op_code,
+                                                      string data);
     void send_subscribe_message(string name, string channel);
     void send_publish_message(string name, string channel, string message);
     void receive_info_message();

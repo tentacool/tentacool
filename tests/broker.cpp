@@ -72,7 +72,6 @@ void BrokerApplication::initialize(Poco::Util::Application& self)
         Poco::Util::ServerApplication::initialize(self);
     }
 
-
 void BrokerApplication::uninitialize()
     {   //! Uninitialize the application
         Poco::Util::ServerApplication::uninitialize();
@@ -187,8 +186,9 @@ void BrokerApplication::handleOption(const std::string& name, const std::string&
             logger.debug("Mongo collection name: "+value);
         }
 #endif
-    }
+}
 
+#ifdef __WITH_MONGO__
 void BrokerApplication::handleMode(const std::string& name, const std::string& value)
     {
         //!\param name is a string with the option name.
@@ -197,6 +197,7 @@ void BrokerApplication::handleMode(const std::string& name, const std::string& v
         else _data_mode = true; //0->file 1->mongodb
         logger.information("Data fetching mode: "+value);
     }
+#endif
 
 void BrokerApplication::handlePort(const std::string& name, const std::string& value)
     {
@@ -223,7 +224,8 @@ void BrokerApplication::displayHelp()
         helpFormatter.setUsage("HpfeedsBroker is running in file mode: \n"
             " broker fetch users authentication datas from a structured file\n\n"
             "If not specified the broker fetch data from a file named 'auth_keys.dat'\n"
-            "-n name    [Give a specific name to the broker - default '@hp1']\n");
+            "-n name    [Give a specific name to the broker - default '@hp1']\n"
+            "-f file    [Give a specific filename for authentication datas]\n");
 #endif
         helpFormatter.setHeader("HpfeedsBroker is a hpfeeds messages broker.");
         helpFormatter.format(std::cout);

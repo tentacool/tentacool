@@ -26,18 +26,21 @@
 
 using namespace std;
 
-void *run(void * args){
+void *run(void * args)
+{
     Arguments* a = reinterpret_cast<Arguments*>(args);
     cout <<endl<<"Starting broker thread..." << endl;
-    try{
+    try {
         BrokerApplication app;
-        app.run(a->size(), reinterpret_cast<char**>(a->data()) );
-    }catch (Poco::Exception& exc){
+        app.run(a->size(), reinterpret_cast<char**>(a->data()));
+    } catch (Poco::Exception& exc) {
         cerr << exc.displayText() << endl;
     }
     return NULL;
 }
-void *run_publisher(void * args){
+
+void *run_publisher(void * args)
+{
     vector<string>* data = reinterpret_cast<vector<string>*>(args);
     cout<<"Starting publisher: "<<data->at(0)<<endl;
     Hpfeeds_client client_pub;
@@ -54,15 +57,30 @@ void *run_publisher(void * args){
     }
     return NULL;
 }
+
 void Integration_test::setUp()
 {
 
 }
+
 void Integration_test::tearDown()
 {
 
 }
-void Integration_test::testConnectDisconnect()
+
+void Integration_test::testHelp()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+    a->insert(a->end(),"-h");
+    pthread_t broker_thread = startBroker(a);
+    sleep(1); //Wait for Broker setup
+    stopBroker(broker_thread);
+    sleep(1);
+    delete a;
+}
+
+void Integration_test::testWrongFile()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
@@ -70,7 +88,26 @@ void Integration_test::testConnectDisconnect()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+    a->insert(a->end(),"-d");
     a->insert(a->end(),"-v");
+    a->insert(a->end(),"-f");
+    a->insert(a->end(),"data/wrong_file.dat");
+    pthread_t broker_thread = startBroker(a);
+    sleep(1); //Wait for Broker setup
+    stopBroker(broker_thread);
+    //sleep(1);
+    delete a;
+}
+
+void Integration_test::testConnectDisconnect()
+{
+    //Also test the logging on file
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
+    a->insert(a->end(),"-m");
+    a->insert(a->end(),"file");
+#endif
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-f");
     a->insert(a->end(),"data/auth_keys.dat");
@@ -85,6 +122,7 @@ void Integration_test::testConnectDisconnect()
     sleep(1);
     delete a;
 }
+
 void Integration_test::testDifferentPortAndName()
 {
     Arguments* a = new Arguments();
@@ -106,6 +144,7 @@ void Integration_test::testDifferentPortAndName()
     sleep(1);
     delete a;
 }
+
 void Integration_test::testAuthentication()
 {
     Arguments* a = new Arguments();
@@ -131,6 +170,7 @@ void Integration_test::testAuthentication()
     sleep(1);
     delete a;
 }
+
 void Integration_test::testFailAuthentication()
 {
     Arguments* a = new Arguments();
@@ -157,6 +197,90 @@ void Integration_test::testFailAuthentication()
     sleep(1);
     delete a;
 }
+
+void Integration_test::testWrongAuthenticationMsg()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
+    a->insert(a->end(),"-m");
+    a->insert(a->end(),"file");
+#endif
+    a->insert(a->end(),"-v");
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-f");
+    a->insert(a->end(),"data/auth_keys.dat");
+    pthread_t broker_thread = startBroker(a);
+    sleep(2); //Wait for Broker setup
+    Hpfeeds_client client;
+    client.connect();
+    sleep(1);
+    client.receive_info_message();
+    //client.send_auth_message("aldo", "wrong_secret");
+    client.send_subscribe_message("aldo", "ch1"); //Instead of an auth msg
+    sleep(1);
+    client.receive_error_message();
+    client.disconnect();
+    stopBroker(broker_thread);
+    sleep(1);
+    delete a;
+}
+
+void Integration_test::testTooLongAuthenticationMsg()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
+    a->insert(a->end(),"-m");
+    a->insert(a->end(),"file");
+#endif
+    a->insert(a->end(),"-v");
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-f");
+    a->insert(a->end(),"data/auth_keys.dat");
+    pthread_t broker_thread = startBroker(a);
+    sleep(2); //Wait for Broker setup
+    Hpfeeds_client client;
+    client.connect();
+    sleep(1);
+    client.receive_info_message();
+    //client.send_auth_message("aldo", "wrong_secret");
+    client.send_wrong_message(300,OP_AUTH, "data"); //Instead of an auth msg
+    sleep(1);
+    client.receive_error_message();
+    client.disconnect();
+    stopBroker(broker_thread);
+    sleep(1);
+    delete a;
+}
+
+void Integration_test::testTooBigMessage()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+#ifdef __WITH_MONGO__
+    a->insert(a->end(),"-m");
+    a->insert(a->end(),"file");
+#endif
+    a->insert(a->end(),"-v");
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-f");
+    a->insert(a->end(),"data/auth_keys.dat");
+    pthread_t broker_thread = startBroker(a);
+    sleep(2); //Wait for Broker setup
+    Hpfeeds_client client;
+    client.connect();
+    sleep(1);
+    client.receive_info_message();
+    client.send_auth_message("aldo", "s3cr3t");
+    client.send_wrong_message(10*1024*1024 + 5 + 1, OP_SUBSCRIBE, "data");
+    sleep(1);
+    client.disconnect();
+    stopBroker(broker_thread);
+    sleep(1);
+    delete a;
+}
+
 void Integration_test::testSubscribe()
 {
     Arguments* a = new Arguments();
@@ -183,6 +307,7 @@ void Integration_test::testSubscribe()
     sleep(1);
     delete a;
 }
+
 void Integration_test::testDoubleSubscribe()
 {
     Arguments* a = new Arguments();
@@ -209,6 +334,7 @@ void Integration_test::testDoubleSubscribe()
     sleep(1);
     delete a;
 }
+
 void Integration_test::testSubscribeNotAllowed()
 {
     Arguments* a = new Arguments();
@@ -236,6 +362,7 @@ void Integration_test::testSubscribeNotAllowed()
     sleep(1);
     delete a;
 }
+
 void Integration_test::testPublish()
 {
     Arguments* a = new Arguments();
@@ -273,6 +400,7 @@ void Integration_test::testPublish()
     sleep(1);
     delete a;
 }
+
 void Integration_test::testPublishNoChannel()
 {
     Arguments* a = new Arguments();
@@ -310,6 +438,7 @@ void Integration_test::testPublishNoChannel()
     sleep(1);
     delete a;
 }
+
 void Integration_test::testPublishNotAllowed()
 {
     Arguments* a = new Arguments();
@@ -347,6 +476,7 @@ void Integration_test::testPublishNotAllowed()
     sleep(1);
     delete a;
 }
+
 void Integration_test::testWrongOpCode()
 {
     Arguments* a = new Arguments();
@@ -376,6 +506,7 @@ void Integration_test::testWrongOpCode()
     sleep(1);
     delete a;
 }
+
 void Integration_test::testWrongTotalLength()
 {
     Arguments* a = new Arguments();
@@ -405,6 +536,7 @@ void Integration_test::testWrongTotalLength()
     sleep(1);
     delete a;
 }
+
 void Integration_test::testPublishBigMessage()
 {
     Arguments* a = new Arguments();
@@ -449,6 +581,7 @@ void Integration_test::testPublishBigMessage()
     sleep(1);
     delete a;
 }
+
 void Integration_test::testPublishConcurrency()
 {
     Arguments* a = new Arguments();
@@ -525,17 +658,7 @@ void Integration_test::testPublishConcurrency()
     delete a;
 
 }
-void Integration_test::testHelp()
-{
-    Arguments* a = new Arguments();
-    a->insert(a->end(),"tentacool_integration_test");
-    a->insert(a->end(),"-h");
-    pthread_t broker_thread = startBroker(a);
-    sleep(1); //Wait for Broker setup
-    stopBroker(broker_thread);
-    sleep(1);
-    delete a;
-}
+
 void Integration_test::testWithMongo()
 {
     Arguments* a = new Arguments();
@@ -558,6 +681,7 @@ void Integration_test::testWithMongo()
     sleep(1);
     delete a;
 }
+
 pthread_t Integration_test::startBroker(Arguments* args){
     pthread_t t1;
     int res = pthread_create(&t1, NULL, run, (void*)args);
@@ -566,10 +690,12 @@ pthread_t Integration_test::startBroker(Arguments* args){
     }
     return t1;
 }
+
 void Integration_test::stopBroker(pthread_t t){
     cout<<"Killing broker_thread..."<<endl;
     pthread_kill(t,SIGINT);
 }
+
 Test *Integration_test::suite()
 {
     TestSuite *suiteOfTests = new CppUnit::TestSuite( "Integration_test" );
@@ -577,10 +703,14 @@ Test *Integration_test::suite()
             new CppUnit::TestCaller<Integration_test>("testHelp",
                     &Integration_test::testHelp));
     suiteOfTests->addTest(
+            new CppUnit::TestCaller<Integration_test>("testWrongFile",
+                    &Integration_test::testWrongFile));
+    suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testConnectDisconnect",
                     &Integration_test::testConnectDisconnect));
     suiteOfTests->addTest(
-            new CppUnit::TestCaller<Integration_test>("testDifferentPortAndName",
+            new CppUnit::TestCaller<Integration_test>
+        ("testDifferentPortAndName",
                     &Integration_test::testDifferentPortAndName));
 #ifdef __WITH_MONGO__
     suiteOfTests->addTest(
@@ -594,13 +724,26 @@ Test *Integration_test::suite()
             new CppUnit::TestCaller<Integration_test>("testFailAuthentication",
                     &Integration_test::testFailAuthentication));
     suiteOfTests->addTest(
+                new CppUnit::TestCaller<Integration_test>
+        ("testWrongAuthenticationMsg",
+                    &Integration_test::testWrongAuthenticationMsg));
+    suiteOfTests->addTest(
+                    new CppUnit::TestCaller<Integration_test>
+        ("testTooLongAuthenticationMsg",
+                            &Integration_test::testTooLongAuthenticationMsg));
+    suiteOfTests->addTest(
+                    new CppUnit::TestCaller<Integration_test>
+        ("testTooBigMessage",
+                            &Integration_test::testTooBigMessage));
+    suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testSubscribe",
                     &Integration_test::testSubscribe));
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testDoubleSubscribe",
                     &Integration_test::testDoubleSubscribe));
     suiteOfTests->addTest(
-            new CppUnit::TestCaller<Integration_test>("testSubscribeNotAllowed",
+            new CppUnit::TestCaller<Integration_test>
+        ("testSubscribeNotAllowed",
                     &Integration_test::testSubscribeNotAllowed));
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testWrongOpCode",

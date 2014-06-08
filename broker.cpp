@@ -203,6 +203,7 @@ protected:
 #endif
     }
 
+#ifdef __WITH_MONGO__
     void handleMode(const std::string& name, const std::string& value)
     {
         //!\param name is a string with the option name.
@@ -211,6 +212,7 @@ protected:
         else _data_mode = true; //0->file 1->mongodb
         logger.information("Data fetching mode: "+value);
     }
+#endif
 
     void handlePort(const std::string& name, const std::string& value)
     {
@@ -237,7 +239,8 @@ protected:
         helpFormatter.setUsage("HpfeedsBroker is running in file mode: \n"
             " broker fetch users authentication datas from a structured file\n\n"
             "If not specified the broker fetch data from a file named 'auth_keys.dat'\n"
-            "-n name    [Give a specific name to the broker - default '@hp1']\n");
+            "-n name    [Give a specific name to the broker - default '@hp1']\n"
+            "-f file    [Give a specific filename for authentication datas]\n");
 #endif
         helpFormatter.setHeader("HpfeedsBroker is a hpfeeds messages broker.");
         helpFormatter.format(std::cout);

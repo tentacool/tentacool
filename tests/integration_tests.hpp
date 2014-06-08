@@ -22,11 +22,15 @@ public:
     void testHelp();
     void testConnectDisconnect();
     void testDifferentPortAndName();
+    void testWrongFile();
     void testWithMongo();
     void testWrongOpCode();
     void testWrongTotalLength();
     void testAuthentication();
     void testFailAuthentication();
+    void testWrongAuthenticationMsg();
+    void testTooLongAuthenticationMsg();
+    void testTooBigMessage();
     void testSubscribe();
     void testDoubleSubscribe();
     void testSubscribeNotAllowed();
@@ -37,5 +41,4 @@ public:
     void testPublishConcurrency();
     static Test *suite();
 };
-
 #endif
