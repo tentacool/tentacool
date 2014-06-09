@@ -91,7 +91,10 @@ int main (int argc, char **argv)
     runner.addTest( CPPUNIT_NS::TestFactoryRegistry::getRegistry().
                     makeTest());
     runner.run( controller );
-
+    if (result.wasSuccessful())
+        cout<<"Successful end of tests"<<endl;
+    else
+        cout<<"End of tests with errors"<<endl;
     // Return error code 1 if the one of test failed.
     return result.wasSuccessful() ? 0 : 1;
 }

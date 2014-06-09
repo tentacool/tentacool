@@ -22,6 +22,7 @@
 #include "Poco/Net/TCPServer.h"
 #include "Poco/Net/TCPServerParams.h"
 #include "Poco/Net/TCPServerConnectionFactory.h"
+#include <unistd.h>
 #include "broker.hpp"
 #include "broker_connection.hpp"
 #include "data_manager.hpp"
@@ -49,11 +50,11 @@ BrokerApplication::BrokerApplication() :
         m_helpRequested(false), _debug_mode(false)
         , logger(Logger::get("HF_Broker"))
         , port(10000), num_threads(10), queuelen(20), idletime(100)
-        , _data_mode(false), _stdout_logging(false)
-        , _log_file("hpfeedsBroker.log"), _filename("auth_keys.dat")
-        , _mongo_ip("127.0.0.1"), _mongo_port("27017")
-        , _mongo_db("hpfeeds"), _mongo_collection("auth_key")
-        , _data_manager(NULL)
+        , _data_mode(false), _stdout_logging(false), _filename_spec(false)
+        , _exe_path("./"), _log_file("hpfeedsBroker.log")
+        ,_filename("auth_keys.dat"), _mongo_ip("127.0.0.1")
+        , _mongo_port("27017"), _mongo_db("hpfeeds")
+        , _mongo_collection("auth_key"), _data_manager(NULL)
 {
     //Default broker name
     BrokerConnection::Broker_name="@hp1";
@@ -64,6 +65,21 @@ BrokerApplication::~BrokerApplication()
     if(!m_helpRequested)logger.information("HpfeedsBroker shutting down");
 }
 
+int BrokerApplication::getPath(char* pBuf)
+{
+    char szTmp[PATH_MAX];
+    sprintf(szTmp, "/proc/self/exe");
+    int bytes = readlink(szTmp, pBuf, PATH_MAX);
+    if(bytes >= 0){
+        pBuf[bytes] = '\0';
+        string line(pBuf, bytes);
+        line = line.substr(0, line.find_last_of("\\/"));
+        line += '/';
+        sprintf(pBuf, "%s", line.c_str());
+        return line.length();
+    };
+    return -1;
+}
 
 void BrokerApplication::initialize(Poco::Util::Application& self)
     {
@@ -99,15 +115,15 @@ void BrokerApplication::defineOptions(Poco::Util::OptionSet& options)
             .repeatable(false));
 
         options.addOption(
-        Poco::Util::Option("broker_name", "n", "give a name to the broker (@hp1 default)")
+        Poco::Util::Option("name", "n", "give a name to the broker (@hp1 default)")
             .required(false)
-            .argument("broker_name")
+            .argument("<name of the broker>")
             .repeatable(false));
 
         options.addOption(
         Poco::Util::Option("port", "p", "define the port HpfeedsBroker will listen to")
             .required(false)
-            .argument("port")
+            .argument("<port number>")
             .validator(new Util::IntValidator(1024, 65535))
             .callback(Poco::Util::OptionCallback<BrokerApplication>
                 (this, &BrokerApplication::handlePort)));
@@ -115,14 +131,14 @@ void BrokerApplication::defineOptions(Poco::Util::OptionSet& options)
         options.addOption(
         Poco::Util::Option("file", "f", "filename where fetch the authentication data")
             .required(false)
-            .argument("file")
+            .argument("<filename>")
             .repeatable(false));
 
 #ifdef __WITH_MONGO__
         options.addOption(
         Poco::Util::Option("mode", "m", "set the way to fetch authentication data")
             .required(false)
-            .argument("mode")
+            .argument("<file|mongodb>")
             .validator(new Util::RegExpValidator("file|mongodb"))
             .callback(Poco::Util::OptionCallback<BrokerApplication>
                 (this, &BrokerApplication::handleMode)));
@@ -130,22 +146,22 @@ void BrokerApplication::defineOptions(Poco::Util::OptionSet& options)
         options.addOption(
         Poco::Util::Option("mongoip", "m_ip", "The IP address of the mongodb")
             .required(false)
-            .argument("mongoip")
+            .argument("<IP of mongodb>")
             .repeatable(false));
         options.addOption(
         Poco::Util::Option("mongoport", "m_port", "The port where mongodb is listening to")
             .required(false)
-            .argument("mongoport")
+            .argument("<Port of mongodb>")
             .repeatable(false));
         options.addOption(
         Poco::Util::Option("mongodb", "m_db", "The name of the db")
             .required(false)
-                .argument("mongodb")
-                .repeatable(false));
+            .argument("<Name of mongo DB>")
+            .repeatable(false));
         options.addOption(
         Poco::Util::Option("mongocoll", "m_coll", "The the name of the collection in 'mongodb' database")
             .required(false)
-            .argument("mongocoll")
+            .argument("<Mongo Collection>")
             .repeatable(false));
 #endif
     }
@@ -156,18 +172,19 @@ void BrokerApplication::handleOption(const std::string& name, const std::string&
         //\param name is a string with the option name.
         //\param value is a string with the value.
         Poco::Util::ServerApplication::handleOption(name, value);
-        if(name=="debug"){
+        if (name == "debug") {
             //Set priority at least for DEBUG messages if the option is setted
             _debug_mode = true;
             logger.setLevel(Message::PRIO_DEBUG);
-        }else if(name=="help"){
+        } else if ( name =="help") {
             m_helpRequested = true;
-        }else if(name=="log_stdout"){
+        } else if (name == "log_stdout") {
             _stdout_logging = true;
-        }else if(name=="file"){
+        } else if (name == "file") {
             _filename = value;
+            _filename_spec = true;
             logger.debug("Filename: "+value);
-        }else if(name=="broker_name"){
+        } else if (name == "name") {
             BrokerConnection::Broker_name = value;
             logger.debug("Broker name: "+value);
         }
@@ -195,7 +212,7 @@ void BrokerApplication::handleMode(const std::string& name, const std::string& v
         //!\param value is a string with the value.
         if(!value.compare("file")) _data_mode = false;
         else _data_mode = true; //0->file 1->mongodb
-        logger.information("Data fetching mode: "+value);
+        logger.debug("Data fetching mode: "+value);
     }
 #endif
 
@@ -206,7 +223,7 @@ void BrokerApplication::handlePort(const std::string& name, const std::string& v
         //!\param value is a string with the value.
         port = (unsigned short) config().getInt("BrokerApplication.port",
                 NumberParser::parseUnsigned(value));
-        logger.information("HpfeedsBroker port setted to " +
+        logger.debug("HpfeedsBroker port setted to " +
                 NumberFormatter::format(port));
     }
 void BrokerApplication::displayHelp()
@@ -264,6 +281,14 @@ int BrokerApplication::main(const std::vector<std::string>& args)
                 logger.setLevel(Message::PRIO_INFORMATION);
             }
 
+            //Get the path of the executable
+            char pBuf[PATH_MAX];
+            int path_len = getPath(pBuf);
+            if(path_len > 0) {
+                //logger.debug(pBuf);
+                _exe_path = string(pBuf, path_len);
+                if(!_filename_spec) _filename = _exe_path + _filename;
+            }
             //Create File manager
             try{
             #ifdef __WITH_MONGO__

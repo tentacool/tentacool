@@ -100,24 +100,19 @@ AC_ARG_WITH(cppunit,
         #If not specified, get lib and headers folder
 
         CPPUNIT_CFLAGS=`cppunit-config --cflags`
-	CPPFLAGS="$CPPFLAGS $CPPUNIT_CFLAGS"
-        if test x$CPPUNIT_CFLAGS != x; then
-              echo ""
-        else
+        if test $? != 0; then
               AC_MSG_ERROR([unable to find the CppUnit])
+        else
+	      CPPFLAGS="$CPPFLAGS $CPPUNIT_CFLAGS"
         fi
 
         CPPUNIT_LIBS=`cppunit-config --libs`
-	LIBS="$LIBS $CPPUNIT_LIBS"
-        #LD= echo $CPPUNIT_LIBS | awk '{print $1;}'
-        #LDFLAGS="$LDFLAGS $LD"
-        if test x"$CPPUNIT_LIBS" != x; then
-              echo "checking for -lcppunit... yes"
-        else
+        if test $? != 0; then
               AC_MSG_ERROR([unable to find the CppUnit])
+        else
+              echo "checking for -lcppunit... yes"
+	      LIBS="$LIBS $CPPUNIT_LIBS"
         fi
-        #cppunit_version='$cppunit-config --version'
-
 ])
 
 #AC_CHECK_LIB([cppunit],[main], [], AC_MSG_ERROR([unable to find the CppUnit]))

@@ -6,8 +6,10 @@
 #include "hpfeeds_client.hpp"
 #include "broker.hpp"
 #include <Poco/Random.h>
+#include <Poco/Path.h>
 #include <pthread.h>
 #include <signal.h>
+#include <unistd.h>
 #include <vector>
 #include <cppunit/TestListener.h>
 #include <cppunit/CompilerOutputter.h>
@@ -29,7 +31,9 @@ using namespace std;
 void *run(void * args)
 {
     Arguments* a = reinterpret_cast<Arguments*>(args);
+#ifdef DEBUG
     cout <<endl<<"Starting broker thread..." << endl;
+#endif
     try {
         BrokerApplication app;
         app.run(a->size(), reinterpret_cast<char**>(a->data()));
@@ -42,7 +46,9 @@ void *run(void * args)
 void *run_publisher(void * args)
 {
     vector<string>* data = reinterpret_cast<vector<string>*>(args);
+#ifdef DEBUG
     cout<<"Starting publisher: "<<data->at(0)<<endl;
+#endif
     Hpfeeds_client client_pub;
     try{
         client_pub.connect();
@@ -67,12 +73,50 @@ void Integration_test::tearDown()
 {
 
 }
+Integration_test::Integration_test()
+{
+    //Get the path of the executable
+    char pBuf[PATH_MAX];
+    int path_len = getPath(pBuf);
+    if(path_len > 0) {
+        _exe_path = string(pBuf, path_len);
+    }
+}
+
+int Integration_test::getPath(char* pBuf)
+{
+    char szTmp[PATH_MAX];
+    sprintf(szTmp, "/proc/self/exe");
+    int bytes = readlink(szTmp, pBuf, PATH_MAX);
+    if(bytes >= 0){
+        pBuf[bytes] = '\0';
+        string line(pBuf, bytes);
+        line = line.substr(0, line.find_last_of("\\/"));
+        line += '/';
+        sprintf(pBuf, "%s", line.c_str());
+        return line.length();
+    };
+    return -1;
+}
 
 void Integration_test::testHelp()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
     a->insert(a->end(),"-h");
+    pthread_t broker_thread = startBroker(a);
+    sleep(1); //Wait for Broker setup
+    stopBroker(broker_thread);
+    sleep(1);
+    delete a;
+}
+
+void Integration_test::testDebugSettings()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+    a->insert(a->end(),"-v");
+    a->insert(a->end(),"-d");
     pthread_t broker_thread = startBroker(a);
     sleep(1); //Wait for Broker setup
     stopBroker(broker_thread);
@@ -88,10 +132,10 @@ void Integration_test::testWrongFile()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/wrong_file.dat");
+#endif
+    a->insert(a->end(),"-f"+_exe_path + "data/wrong_file.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(1); //Wait for Broker setup
     stopBroker(broker_thread);
@@ -108,9 +152,10 @@ void Integration_test::testConnectDisconnect()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+    a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
 
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
@@ -131,13 +176,12 @@ void Integration_test::testDifferentPortAndName()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
-    a->insert(a->end(),"-p");
-    a->insert(a->end(),"10127");
-    a->insert(a->end(),"-n");
-    a->insert(a->end(),"Broker2");
+#endif
+    a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
+    a->insert(a->end(),"-p10127");
+    a->insert(a->end(),"-nBroker2");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     stopBroker(broker_thread);
@@ -153,10 +197,11 @@ void Integration_test::testAuthentication()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+    a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client;
@@ -179,10 +224,11 @@ void Integration_test::testFailAuthentication()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+    a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client;
@@ -206,10 +252,11 @@ void Integration_test::testWrongAuthenticationMsg()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+ a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client;
@@ -234,10 +281,11 @@ void Integration_test::testTooLongAuthenticationMsg()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+ a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client;
@@ -262,10 +310,11 @@ void Integration_test::testTooBigMessage()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+ a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client;
@@ -289,10 +338,11 @@ void Integration_test::testSubscribe()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+ a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client;
@@ -316,10 +366,11 @@ void Integration_test::testDoubleSubscribe()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+ a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client;
@@ -343,10 +394,11 @@ void Integration_test::testSubscribeNotAllowed()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+ a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client;
@@ -371,10 +423,11 @@ void Integration_test::testPublish()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+ a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client_sub;
@@ -409,10 +462,11 @@ void Integration_test::testPublishNoChannel()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+ a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client_sub;
@@ -447,10 +501,11 @@ void Integration_test::testPublishNotAllowed()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+ a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client_sub;
@@ -485,10 +540,11 @@ void Integration_test::testWrongOpCode()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+ a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client_sub;
@@ -515,10 +571,11 @@ void Integration_test::testWrongTotalLength()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+ a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client_sub;
@@ -545,10 +602,11 @@ void Integration_test::testPublishBigMessage()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+ a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client_sub;
@@ -590,10 +648,11 @@ void Integration_test::testPublishConcurrency()
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-f");
-    a->insert(a->end(),"data/auth_keys.dat");
+#endif
+    a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client_sub;
@@ -673,8 +732,10 @@ void Integration_test::testWithMongo()
     a->insert(a->end(),"hpfeeds");
     a->insert(a->end(),"--mongocoll");
     a->insert(a->end(),"auth_key");
+#ifdef DEBUG
     a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
+#endif
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     stopBroker(broker_thread);
@@ -692,7 +753,9 @@ pthread_t Integration_test::startBroker(Arguments* args){
 }
 
 void Integration_test::stopBroker(pthread_t t){
+#ifdef DEBUG
     cout<<"Killing broker_thread..."<<endl;
+#endif
     pthread_kill(t,SIGINT);
 }
 
@@ -702,6 +765,9 @@ Test *Integration_test::suite()
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testHelp",
                     &Integration_test::testHelp));
+    suiteOfTests->addTest(
+            new CppUnit::TestCaller<Integration_test>("testDebugSettings",
+                    &Integration_test::testDebugSettings));
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testWrongFile",
                     &Integration_test::testWrongFile));

@@ -15,11 +15,14 @@ typedef vector<string> Arguments;
 class Integration_test: public TestFixture
 {
 public:
+    Integration_test();
     void setUp();
     void tearDown();
+    int getPath(char* pBuf);
     pthread_t startBroker(Arguments* args);
     void stopBroker(pthread_t t);
     void testHelp();
+    void testDebugSettings();
     void testConnectDisconnect();
     void testDifferentPortAndName();
     void testWrongFile();
@@ -40,5 +43,7 @@ public:
     void testPublishBigMessage();
     void testPublishConcurrency();
     static Test *suite();
+private:
+    string _exe_path;
 };
 #endif

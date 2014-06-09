@@ -5,6 +5,8 @@
 #include "data_manager_tests.hpp"
 #include "data_manager.hpp"
 #include <memory>
+#include <limits.h>
+#include <unistd.h>
 #include <cppunit/TestListener.h>
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
@@ -19,6 +21,7 @@
 #include <cppunit/TestRunner.h>
 #include <cppunit/ui/text/TestRunner.h>
 #include <cppunit/extensions/HelperMacros.h>
+
 #ifdef __WITH_MONGO__
 #include <mongo/client/dbclient.h>
 #endif
@@ -90,6 +93,14 @@ DataManager_test::DataManager_test(): dm_mongodb_work(NULL)
             _conn.insert("hpfeeds.auth_key",u4);
         }
 #endif
+        //Get the path of the executable
+        char pBuf[PATH_MAX];
+        int path_len = getPath(pBuf);
+        if (path_len > 0) {
+            _exe_path = string(pBuf, path_len);
+        } else {
+            _exe_path = "";
+        }
     } catch(Poco::Exception& e) {
         cout<<e.displayText()<<endl;
         exit(-1);
@@ -102,14 +113,30 @@ DataManager_test::~DataManager_test(){
 #endif
 }
 
+int DataManager_test::getPath(char* pBuf)
+{
+    char szTmp[PATH_MAX];
+    sprintf(szTmp, "/proc/self/exe");
+    int bytes = readlink(szTmp, pBuf, PATH_MAX);
+    if(bytes >= 0){
+        pBuf[bytes] = '\0';
+        string line(pBuf, bytes);
+        line = line.substr(0, line.find_last_of("\\/"));
+        line += '/';
+        sprintf(pBuf, "%s", line.c_str());
+        return line.length();
+    };
+    return -1;
+}
+
 void DataManager_test::setUp()
 {
     try {
-        filename = "data/auth_keys.dat";
-        malformed_file = "data/malformed_file.dat";
-        not_existing_file = "data/iamnotexists.boh";
-        too_long_file = "data/toolong_line.dat";
-        black_rows_file = "data/blank_rows.dat";
+        filename = _exe_path + "data/auth_keys.dat";
+        malformed_file = _exe_path + "data/malformed_file.dat";
+        not_existing_file = _exe_path + "data/iamnotexists.boh";
+        too_long_file = _exe_path + "data/toolong_line.dat";
+        black_rows_file = _exe_path + "data/blank_rows.dat";
 #ifdef __WITH_MONGO__
         dm_mongodb_work = new DataManager("localhost", "27017", "hpfeeds",
                 "auth_key");

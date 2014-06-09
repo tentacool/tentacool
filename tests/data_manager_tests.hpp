@@ -15,6 +15,7 @@ private:
 #ifdef __WITH_MONGO__
     mongo::DBClientConnection _conn;
 #endif
+    string _exe_path;
     string filename;
     string nullstring;
     string too_long_file;
@@ -26,6 +27,7 @@ public:
 
     DataManager_test();
     virtual ~DataManager_test();
+    int getPath(char* pBuf);
     void setUp();
     void tearDown();
     void testFileMode();

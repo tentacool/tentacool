@@ -27,6 +27,7 @@ public:
     BrokerApplication();
     ~BrokerApplication();
 protected:
+    int getPath(char* pBuf);
     void initialize(Util::Application& self);
     void uninitialize();
     void defineOptions(Util::OptionSet& options);
@@ -44,6 +45,8 @@ private:
     int idletime;
     bool _data_mode;
     bool _stdout_logging;
+    bool _filename_spec;
+    string _exe_path;
     string _log_file;
     string _filename;
     string _mongo_ip;

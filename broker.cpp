@@ -14,16 +14,19 @@
 #include <Poco/Util/Option.h>
 #include <Poco/Util/OptionSet.h>
 #include <Poco/Util/HelpFormatter.h>
-#include "Poco/NumberParser.h"
-#include "Poco/NumberFormatter.h"
+#include <Poco/NumberParser.h>
+#include <Poco/NumberFormatter.h>
 #include <Poco/Util/Validator.h>
 #include <Poco/Util/IntValidator.h>
 #include <Poco/Util/RegExpValidator.h>
-#include "Poco/Net/TCPServer.h"
-#include "Poco/Net/TCPServerParams.h"
-#include "Poco/Net/TCPServerConnectionFactory.h"
+#include <Poco/Net/TCPServer.h>
+#include <Poco/Net/TCPServerParams.h>
+#include <Poco/Net/TCPServerConnectionFactory.h>
+#include <Poco/Path.h>
+#include <unistd.h>
 #include "broker_connection.hpp"
 #include "data_manager.hpp"
+#include <math.h>
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -65,10 +68,11 @@ public:
         m_helpRequested(false), _debug_mode(false)
         , logger(Logger::get("HF_Broker"))
         , port(10000), num_threads(10), queuelen(20), idletime(100)
-        , _data_mode(false), _stdout_logging(false)
-        , _log_file("hpfeedsBroker.log"), _filename("auth_keys.dat")
-        , _mongo_ip("127.0.0.1"), _mongo_port("27017")
-        , _mongo_db("hpfeeds"), _mongo_collection("auth_key")
+        , _data_mode(false), _stdout_logging(false), _filename_spec(false)
+        , _exe_path("./"), _log_file("hpfeedsBroker.log")
+        , _filename("auth_keys.dat"), _mongo_ip("127.0.0.1")
+        , _mongo_port("27017"), _mongo_db("hpfeeds")
+        , _mongo_collection("auth_key")
     {
         //Default broker name
         BrokerConnection::Broker_name="@hp1";
@@ -114,15 +118,15 @@ protected:
             .repeatable(false));
 
         options.addOption(
-        Poco::Util::Option("broker_name", "n", "give a name to the broker (@hp1 default)")
+        Poco::Util::Option("name", "n", "give a name to the broker (@hp1 default)")
             .required(false)
-            .argument("broker_name")
+            .argument("<name of the broker>")
             .repeatable(false));
 
         options.addOption(
         Poco::Util::Option("port", "p", "define the port HpfeedsBroker will listen to")
             .required(false)
-            .argument("port")
+            .argument("<port number>")
             .validator(new Util::IntValidator(1024, 65535))
             .callback(Poco::Util::OptionCallback<BrokerApplication>
                 (this, &BrokerApplication::handlePort)));
@@ -130,14 +134,14 @@ protected:
         options.addOption(
         Poco::Util::Option("file", "f", "filename where fetch the authentication data")
             .required(false)
-            .argument("file")
+            .argument("<filename>")
             .repeatable(false));
 
 #ifdef __WITH_MONGO__
         options.addOption(
         Poco::Util::Option("mode", "m", "set the way to fetch authentication data")
             .required(false)
-            .argument("mode")
+            .argument("<file|mongodb>")
             .validator(new Util::RegExpValidator("file|mongodb"))
             .callback(Poco::Util::OptionCallback<BrokerApplication>
                 (this, &BrokerApplication::handleMode)));
@@ -145,22 +149,22 @@ protected:
         options.addOption(
         Poco::Util::Option("mongoip", "m_ip", "The IP address of the mongodb")
             .required(false)
-            .argument("mongoip")
+            .argument("<IP of mongodb>")
             .repeatable(false));
         options.addOption(
         Poco::Util::Option("mongoport", "m_port", "The port where mongodb is listening to")
             .required(false)
-            .argument("mongoport")
+            .argument("<Port of mongodb>")
             .repeatable(false));
         options.addOption(
         Poco::Util::Option("mongodb", "m_db", "The name of the db")
             .required(false)
-                .argument("mongodb")
-                .repeatable(false));
+            .argument("<Name of mongo DB>")
+            .repeatable(false));
         options.addOption(
         Poco::Util::Option("mongocoll", "m_coll", "The the name of the collection in 'mongodb' database")
             .required(false)
-            .argument("mongocoll")
+            .argument("<Mongo Collection>")
             .repeatable(false));
 #endif
     }
@@ -171,18 +175,19 @@ protected:
         //\param name is a string with the option name.
         //\param value is a string with the value.
         Poco::Util::ServerApplication::handleOption(name, value);
-        if(name=="debug"){
+        if(name == "debug"){
             //Set priority at least for DEBUG messages if the option is setted
             _debug_mode = true;
             logger.setLevel(Message::PRIO_DEBUG);
-        }else if(name=="help"){
+        }else if(name == "help"){
             m_helpRequested = true;
-        }else if(name=="log_stdout"){
+        }else if(name== "log_stdout"){
             _stdout_logging = true;
-        }else if(name=="file"){
+        }else if(name == "file"){
             _filename = value;
+            _filename_spec = true;
             logger.debug("Filename: "+value);
-        }else if(name=="broker_name"){
+        }else if(name == "name"){
             BrokerConnection::Broker_name = value;
             logger.debug("Broker name: "+value);
         }
@@ -246,6 +251,22 @@ protected:
         helpFormatter.format(std::cout);
     }
 
+    int getPath(char* pBuf)
+    {
+        char szTmp[PATH_MAX];
+        sprintf(szTmp, "/proc/self/exe");
+        int bytes = readlink(szTmp, pBuf, PATH_MAX);
+        if(bytes >= 0){
+            pBuf[bytes] = '\0';
+            string line(pBuf, bytes);
+            line = line.substr(0, line.find_last_of("\\/"));
+            line += '/';
+            sprintf(pBuf, "%s", line.c_str());
+            return line.length();
+        };
+        return -1;
+    }
+
     int main(const std::vector<std::string>& args)
     {
         try{
@@ -275,6 +296,15 @@ protected:
             //Set priority at least for INFO messages or DEBUG
             if(_debug_mode)debugTag="[DEBUG_LOGGING_MODE]";
             else logger.setLevel(Message::PRIO_INFORMATION);
+
+            //Get the path of the executable
+            char pBuf[PATH_MAX];
+            int path_len = getPath(pBuf);
+            if(path_len > 0) {
+                //logger.debug(pBuf);
+                _exe_path = string(pBuf, path_len);
+                if(!_filename_spec) _filename = _exe_path + _filename;
+            }
 
             //Create File manager
             try{
@@ -332,6 +362,8 @@ private:
     int idletime;
     bool _data_mode;
     bool _stdout_logging;
+    bool _filename_spec;
+    string _exe_path;
     string _log_file;
     string _filename;
     string _mongo_ip;
