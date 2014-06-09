@@ -37,6 +37,7 @@ cd code_coverage
 
         echo "[Code Coverage] Copying data needed..."
         cp -avr ../data/ .
+		cp -avr ../auth_keys.dat .
 
 #Building file: authenticator.cpp
 csg++ $MONGO -I/usr/local/include/Poco -I/usr/local/include/Poco/Net -I/usr/local/include/Poco/Util -I/usr/local/include/cppunit -I/usr/include/mongo/client -O3 -g -std=c++0x -Wall -Werror -c -fmessage-length=0 -MMD -MP -MF"authenticator.d" -MT"authenticator.d" -o "authenticator.o" $LOCAL_PATH"authenticator.cpp"
