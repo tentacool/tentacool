@@ -39,7 +39,9 @@ void *run(void * args)
         app.run(a->size(), reinterpret_cast<char**>(a->data()));
     } catch (Poco::Exception& exc) {
         cerr << exc.displayText() << endl;
+        a = NULL;
     }
+    a = NULL;
     return NULL;
 }
 
@@ -115,10 +117,10 @@ void Integration_test::testDebugSettings()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
-    a->insert(a->end(),"-v");
     a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
     pthread_t broker_thread = startBroker(a);
-    sleep(1); //Wait for Broker setup
+    sleep(2); //Wait for Broker setup
     stopBroker(broker_thread);
     sleep(1);
     delete a;
@@ -128,18 +130,19 @@ void Integration_test::testWrongFile()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
-#ifdef DEBUG
-    a->insert(a->end(),"-d");
-#endif
     a->insert(a->end(),"-f"+_exe_path + "data/wrong_file.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(1); //Wait for Broker setup
+    sleep(2); //Wait for Broker setup
     stopBroker(broker_thread);
-    //sleep(1);
+    sleep(1);
     delete a;
 }
 
@@ -148,12 +151,13 @@ void Integration_test::testConnectDisconnect()
     //Also test the logging on file
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-d");
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
 
@@ -161,8 +165,8 @@ void Integration_test::testConnectDisconnect()
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client;
     client.connect();
-    sleep(1);
     client.disconnect();
+    sleep(1);
     stopBroker(broker_thread);
     sleep(1);
     delete a;
@@ -172,12 +176,13 @@ void Integration_test::testDifferentPortAndName()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     a->insert(a->end(),"-p10127");
@@ -193,13 +198,13 @@ void Integration_test::testAuthentication()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
@@ -220,13 +225,13 @@ void Integration_test::testFailAuthentication()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
@@ -248,13 +253,13 @@ void Integration_test::testWrongAuthenticationMsg()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
@@ -277,15 +282,15 @@ void Integration_test::testTooLongAuthenticationMsg()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
 #endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
-#endif
- a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
+    a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     Hpfeeds_client client;
@@ -306,13 +311,13 @@ void Integration_test::testTooBigMessage()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
@@ -334,13 +339,13 @@ void Integration_test::testSubscribe()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
@@ -362,13 +367,13 @@ void Integration_test::testDoubleSubscribe()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
@@ -380,6 +385,7 @@ void Integration_test::testDoubleSubscribe()
     client.send_auth_message("aldo", "s3cr3t");
     client.send_subscribe_message("aldo", "ch1");
     client.send_subscribe_message("aldo", "ch1");
+    sleep(1);
     client.disconnect();
     stopBroker(broker_thread);
     sleep(1);
@@ -390,13 +396,13 @@ void Integration_test::testSubscribeNotAllowed()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
@@ -419,13 +425,13 @@ void Integration_test::testPublish()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
@@ -458,13 +464,13 @@ void Integration_test::testPublishNoChannel()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
@@ -497,13 +503,13 @@ void Integration_test::testPublishNotAllowed()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
@@ -536,13 +542,13 @@ void Integration_test::testWrongOpCode()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
@@ -567,13 +573,13 @@ void Integration_test::testWrongTotalLength()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
@@ -598,13 +604,13 @@ void Integration_test::testPublishBigMessage()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
@@ -644,13 +650,13 @@ void Integration_test::testPublishConcurrency()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
 #ifdef __WITH_MONGO__
     a->insert(a->end(),"-m");
     a->insert(a->end(),"file");
-#endif
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
@@ -722,6 +728,10 @@ void Integration_test::testWithMongo()
 {
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
     a->insert(a->end(),"-m");
     a->insert(a->end(),"mongodb");
     a->insert(a->end(),"--mongoip");
@@ -732,10 +742,6 @@ void Integration_test::testWithMongo()
     a->insert(a->end(),"hpfeeds");
     a->insert(a->end(),"--mongocoll");
     a->insert(a->end(),"auth_key");
-#ifdef DEBUG
-    a->insert(a->end(),"-v");
-    a->insert(a->end(),"-d");
-#endif
     pthread_t broker_thread = startBroker(a);
     sleep(2); //Wait for Broker setup
     stopBroker(broker_thread);
@@ -744,11 +750,16 @@ void Integration_test::testWithMongo()
 }
 
 pthread_t Integration_test::startBroker(Arguments* args){
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     pthread_t t1;
-    int res = pthread_create(&t1, NULL, run, (void*)args);
+    int res = pthread_create(&t1, &attr, run, (void*)args);
     if (res){
+        pthread_attr_destroy(&attr);
         cout<<"Error during broker_thread creation: "<<res<<endl;
     }
+    pthread_attr_destroy(&attr);
     return t1;
 }
 
@@ -756,7 +767,7 @@ void Integration_test::stopBroker(pthread_t t){
 #ifdef DEBUG
     cout<<"Killing broker_thread..."<<endl;
 #endif
-    pthread_kill(t,SIGINT);
+    pthread_kill(t, SIGINT);
 }
 
 Test *Integration_test::suite()

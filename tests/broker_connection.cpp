@@ -155,6 +155,7 @@ void BrokerConnection::run()
                             string s_channel(
                                 reinterpret_cast<char*>(name+1+name->len),
                                 ntohl(total_length)- HEADER - 1 - name->len);
+
                             if (!_data_manager->may_subscribe(s_name,
                                                               s_channel)) {
                                 //The client can't subscribe to the channel

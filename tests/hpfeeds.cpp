@@ -7,14 +7,15 @@ using namespace std;
 hpf_msg_t *hpf_msg_new()
 {
     hpf_msg_t *msg;
-    msg = new hpf_msg_t;
+    //msg = new hpf_msg_t;
+    msg = (hpf_msg_t *) calloc(1, sizeof(hpf_msg_t ));
     msg->hdr.msglen = htonl(sizeof(msg->hdr));
     return msg;
 }
 
 void hpf_msg_delete(hpf_msg_t *m)
 {
-    if (m) delete(m);
+    if (m) free(m);
     return;
 }
 
@@ -106,7 +107,12 @@ hpf_msg_t *hpf_msg_publish(string ident, string channel, u_char *data,
                                                                 ident.length());
     hpf_msg_add_chunk(&msg, reinterpret_cast<const u_char*>(channel.data()),
                                                               channel.length());
-    hpf_msg_add_payload(&msg, data, data_len);
+    try {
+        hpf_msg_add_payload(&msg, data, data_len);
+    } catch (Poco::Exception& e){
+        hpf_msg_delete(msg);
+        throw Poco::Exception("Memory allocation fault");
+    }
     return msg;
 }
 
@@ -119,8 +125,14 @@ hpf_msg_t *hpf_msg_subscribe(string ident, string channel)
     msg->hdr.opcode = OP_SUBSCRIBE;
     hpf_msg_add_chunk(&msg, reinterpret_cast<const u_char*>(ident.data()),
                                                                 ident.length());
-    hpf_msg_add_payload(&msg, reinterpret_cast<const u_char*>(channel.data()),
-                                                              channel.length());
+
+    try {
+        hpf_msg_add_payload(&msg, 
+            reinterpret_cast<const u_char*>(channel.data()), channel.length());
+    } catch (Poco::Exception& e){
+        hpf_msg_delete(msg);
+        throw Poco::Exception("Memory allocation fault");
+    }
     return msg;
 }
 hpf_msg_t *hpf_msg_auth(u_int32_t nonce, string ident, string secret)

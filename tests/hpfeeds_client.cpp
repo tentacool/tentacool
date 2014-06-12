@@ -51,10 +51,12 @@ void Hpfeeds_client::receive_error_message()
         _sock->receiveBytes(_inBuffer + sizeof(uint32_t) +
                 sizeof(uint8_t), ntohl(total_length) -
                 sizeof(uint32_t) - sizeof(uint8_t));
+    #ifdef DEBUG
         if(op_code==OP_ERROR){
             cout<<"Server answered with an error message: "<<
                     (_inBuffer+sizeof(uint32_t) + sizeof(uint8_t))<<endl;
         }
+    #endif
     }
 }
 void Hpfeeds_client::receive_info_message()
@@ -74,18 +76,22 @@ void Hpfeeds_client::receive_info_message()
         _sock->receiveBytes(_inBuffer + sizeof(uint32_t) +
                 sizeof(uint8_t), ntohl(total_length) -
                 sizeof(uint32_t) - sizeof(uint8_t));
-        msg = hpf_msg_new();
-        memcpy(msg,_inBuffer,ntohl(total_length));
+        //msg = hpf_msg_new();
+        //TODO devo allocare data in msg
+        msg = reinterpret_cast<hpf_msg_t*>(_inBuffer);
+        //memcpy(msg,_inBuffer,ntohl(total_length));
 
         //Getting the broker name
         hpf_chunk_t *b_name = hpf_msg_get_chunk(
-                reinterpret_cast<u_char*>(msg->data), msg->data[0]);
+                reinterpret_cast<u_char*>(_inBuffer) + sizeof(msg->hdr),
+                                                                msg->data[0]);
         string broker_name(reinterpret_cast<char*>(b_name->data),
                                                       b_name->len);
         _broker_name = broker_name;
         //Getting the nonce
         memcpy(&_nonce, b_name + 1 + b_name->len,
                 ntohl(msg->hdr.msglen) - sizeof(msg->hdr) - 1 - b_name->len);
+        msg = NULL;
     }
 }
 void Hpfeeds_client::receive_publish_message()
@@ -108,13 +114,14 @@ void Hpfeeds_client::receive_publish_message()
                 sizeof(uint32_t) - sizeof(uint8_t));
         //cout<<"BYTE LETTI PUBLISH: "<<nbytes<<endl;
 
-        msg = hpf_msg_new();
+        //msg = hpf_msg_new();
         msg = reinterpret_cast<hpf_msg_t *>(_inBuffer);
-
+    #ifdef DEBUG
         if(op_code==OP_ERROR){
             cout<<"Server answered with an error message: "<<msg->data<<endl;
             return;
         }
+    #endif
 
         //Getting name
         hpf_chunk_t *name = hpf_msg_get_chunk(
@@ -129,8 +136,11 @@ void Hpfeeds_client::receive_publish_message()
         string message(reinterpret_cast<char*>(msg->data) + 1 + name->len
                 + 1 + channel->len, ntohl(total_length) - 5 - 1 - name->len
                 - 1 - channel->len);
+    #ifdef DEBUG
+        //if (message.Length > 15) message = message.Left(15 - 3) + "...";
         cout<<"Message from "+s_name+" on channel "+s_channel+":"<<endl<<"=> "
                 <<message<<endl;
+    #endif
     }
 }
 
