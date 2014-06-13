@@ -773,6 +773,7 @@ void Integration_test::stopBroker(pthread_t t){
 Test *Integration_test::suite()
 {
     TestSuite *suiteOfTests = new CppUnit::TestSuite( "Integration_test" );
+
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testHelp",
                     &Integration_test::testHelp));
@@ -789,11 +790,13 @@ Test *Integration_test::suite()
             new CppUnit::TestCaller<Integration_test>
         ("testDifferentPortAndName",
                     &Integration_test::testDifferentPortAndName));
+
 #ifdef __WITH_MONGO__
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testWithMongo",
                     &Integration_test::testWithMongo));
 #endif
+
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testAuthentication",
                     &Integration_test::testAuthentication));
@@ -808,6 +811,7 @@ Test *Integration_test::suite()
                     new CppUnit::TestCaller<Integration_test>
         ("testTooLongAuthenticationMsg",
                             &Integration_test::testTooLongAuthenticationMsg));
+
     suiteOfTests->addTest(
                     new CppUnit::TestCaller<Integration_test>
         ("testTooBigMessage",

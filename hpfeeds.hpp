@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <string>
+#include <vector>
 #include <iostream>
 #include <Poco/Exception.h>
 
@@ -31,16 +32,31 @@ typedef struct {
     u_char data[];  //!< Data payload
 } hpf_chunk_t;
 
+typedef vector<u_char> hpf_msg;
+hpf_msg hpf_new();
+hpf_msg hpf_error(const string err);
+hpf_msg hpf_info(u_int32_t nonce, string fbname);
+hpf_msg hpf_auth(uint32_t nonce, string ident, string secret);
+hpf_msg hpf_subscribe(string ident, string channel);
+hpf_msg hpf_publish(string ident, string channel, u_char *data,
+                                                    uint32_t data_len);
+void hpf_add_chunk(hpf_msg&m, const u_char *data, uint32_t len);
+void hpf_add_payload(hpf_msg& m, const u_char *data, uint32_t len);
+uint32_t hpf_getsize(hpf_msg& m);
+uint8_t hpf_gettype(hpf_msg& m);
+/////////// OLD ///////
+hpf_chunk_t *hpf_msg_get_chunk(u_char *data, size_t len);
+/*
 hpf_msg_t *hpf_msg_new();
 void hpf_msg_delete(hpf_msg_t *m);
 u_int32_t hpf_msg_getsize(hpf_msg_t *m);
 u_int32_t hpf_msg_gettype(hpf_msg_t *m);
 void hpf_msg_add_payload(hpf_msg_t **m, const u_char *data, size_t len);
 void hpf_msg_add_chunk(hpf_msg_t **m, const u_char *data, size_t len);
-hpf_chunk_t *hpf_msg_get_chunk(u_char *data, size_t len);
 hpf_msg_t *hpf_msg_error(const string err);
 hpf_msg_t *hpf_msg_info(u_int32_t nonce, string fbname);
 hpf_msg_t *hpf_msg_publish(string ident, string channel, u_char *data, size_t data_len);
 hpf_msg_t *hpf_msg_subscribe(string ident, string channel);
 hpf_msg_t *hpf_msg_auth(u_int32_t nonce, string ident, string secret);
+*/
 #endif

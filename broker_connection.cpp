@@ -41,13 +41,11 @@ void BrokerConnection::run()
     Poco::Timespan timeOut(10, 0); //sec, usec
     int nbytes;
     uint32_t how_much_read; //total_lenght+opcode+name_lenght+channel_lenght
-    hpf_msg_t *msg;
 
     // Start the authentication phase
-    msg = hpf_msg_info(_auth.genNonce(), Broker_name);
+    hpf_msg msg= hpf_info(_auth.genNonce(), Broker_name);
     _logger.debug("Sending INFO message to the client...");
-    _sock.sendBytes(msg, ntohl(msg->hdr.msglen));
-    hpf_msg_delete(msg);
+    _sock.sendBytes(msg.data(), msg.size());
     _state = S_AUTHENTICATION_PROCEEDING;
 
     while (isOpen) {
@@ -137,13 +135,12 @@ void BrokerConnection::run()
                         how_much_read = 4+1+1;
                         _logger.debug("I've got a subscription...");
                         try{
+                            //TODO name and channel
                             //Get the name
-                            hpf_chunk_t *name = hpf_msg_get_chunk(
-                                  reinterpret_cast<u_char*>(&_inBuffer[5]),
-                                                               _inBuffer[5]);
                             string s_name(
-                                    reinterpret_cast<char*>(name->data),
-                                                                name->len);
+                                    reinterpret_cast<char*>(&_inBuffer[5+1]),
+                                    _inBuffer[5]);
+                            //cout<<s_name<<endl;
                             how_much_read += s_name.length();
                             if (how_much_read >= ntohl(total_length)) {
                                 sendErrorMsg("Invalid message -> Bad Client",
@@ -153,8 +150,11 @@ void BrokerConnection::run()
                             }
                             //Get the channelname
                             string s_channel(
-                                reinterpret_cast<char*>(name+1+name->len),
-                                ntohl(total_length)- HEADER - 1 - name->len);
+                                reinterpret_cast<char*>(
+                                    &_inBuffer[HEADER + 1] + s_name.length()),
+                                    ntohl(total_length) - HEADER - 1
+                                    - s_name.length());
+                            //cout<<s_channel<<endl;
 
                             if (!_data_manager->may_subscribe(s_name,
                                                               s_channel)) {
@@ -180,15 +180,13 @@ void BrokerConnection::run()
                     case OP_PUBLISH: { ////////// PUBLISH //////////
                         how_much_read = 5+1+1;
                         _logger.debug("I've got a publish...");
-                        hpf_msg_t *pub_msg = NULL;
+                        //hpf_msg_t *pub_msg = NULL;// TODO
                         try{
                             //Get the name
-                            hpf_chunk_t *name = hpf_msg_get_chunk(
-                                  reinterpret_cast<u_char*>(&_inBuffer[5]),
-                                                               _inBuffer[5]);
                             string s_name(
-                                    reinterpret_cast<char*>(name->data),
-                                                               name->len);
+                                    reinterpret_cast<char*>(&_inBuffer[5+1]),
+                                    _inBuffer[5]);
+                            //cout<<s_name<<endl;
                             how_much_read += s_name.length();
                             if(how_much_read >= ntohl(total_length)){
                                 sendErrorMsg("Invalid message -> Bad Client",
@@ -197,13 +195,12 @@ void BrokerConnection::run()
                                 break;
                             }
                             //Get the channelname
-                            hpf_chunk_t *channel = hpf_msg_get_chunk(
-                                reinterpret_cast<u_char*>(name+1+name->len),
-                               (reinterpret_cast<u_char*>
-                                                      (name+1+name->len))[0]);
                             string s_channel(
-                                    reinterpret_cast<char*>(channel->data),
-                                    channel->len);
+                               reinterpret_cast<char*>(
+                                   &_inBuffer[HEADER + 1] + 1
+                                   + s_name.length()),
+                                   _inBuffer[HEADER + 1 + s_name.length()]);
+                            //cout<<s_channel<<endl;
                             how_much_read += s_channel.length();
                             if(how_much_read >= ntohl(total_length)){
                                sendErrorMsg("Invalid message -> Bad Client",
@@ -221,22 +218,22 @@ void BrokerConnection::run()
                                 break;
                             }
                             //Get the payload
-                            u_char* payload = (channel->data+channel->len);
-                            int payload_lenght = ntohl(total_length) - 5
-                                          - 1 - name->len - 1 - channel->len;
+                            u_char* payload = reinterpret_cast<u_char*>(
+                                    &_inBuffer[HEADER + 1] + s_name.length() +
+                                    1 + s_channel.length());
+                            int payload_lenght = ntohl(total_length) - HEADER
+                                          - 1 - s_name.length()
+                                          - 1 - s_channel.length();
                             //Create the hpfeeds message that we'll send to
                             // the subscribed clients
-                            pub_msg = hpf_msg_publish(s_name, s_channel,
+                            hpf_msg pub_msg = hpf_publish(s_name, s_channel,
                                                       payload, payload_lenght);
-                            _router.publish(s_channel, &_sock,
-                                    reinterpret_cast<u_char*>(pub_msg),
-                                    ntohl(pub_msg->hdr.msglen));
-                            hpf_msg_delete(pub_msg);
+                            _router.publish(s_channel, &_sock, pub_msg.data(),
+                                    pub_msg.size());
                             how_much_read = 0;
                         } catch(Poco::Exception& e) {
                             _logger.error("ERROR: " + e.displayText());
                             how_much_read = 0;
-                            hpf_msg_delete(pub_msg);
                             //isOpen = false; ??
                         }
                         break;
@@ -264,10 +261,9 @@ void BrokerConnection::sendErrorMsg(string msg, bool sendToClient)
 {
     _logger.error(msg);
     if(sendToClient) {
-        hpf_msg_t *m = hpf_msg_error(msg);
+        hpf_msg m = hpf_error(msg);
         _logger.debug("Sending ERROR message to the client...");
-        _sock.sendBytes(m, ntohl(m->hdr.msglen));
-        hpf_msg_delete(m);
+        _sock.sendBytes(m.data(), m.size());
     }
     // If it's subscribed to a channel i have to unsubscribe, so i do not
     // modify its state
@@ -276,7 +272,6 @@ void BrokerConnection::sendErrorMsg(string msg, bool sendToClient)
 
 void BrokerConnection::authUser()
 {
-    hpf_chunk_t *chunk;
     hpf_msg_t* msg = reinterpret_cast<hpf_msg_t *>(_inBuffer.data());
     uint32_t how_much_read = 4+1+1; //total_lenght + opcode+ name length
 
@@ -286,28 +281,27 @@ void BrokerConnection::authUser()
         sendErrorMsg("accessfail", true);
         return;
     }
-    if(ntohl(msg->hdr.msglen)>message_sizes[int(msg->hdr.opcode)]){
+    if(ntohl(msg->hdr.msglen) > message_sizes[int(msg->hdr.opcode)]){
         //If the message is too long for its type
        sendErrorMsg("accessfail", true);
        return;
     }
-
-    chunk = hpf_msg_get_chunk((u_char*)_inBuffer.data() + sizeof(msg->hdr),
-        ntohl(msg->hdr.msglen) - sizeof(msg->hdr));
-
-    string username((char*)chunk->data, chunk->len);
+    //TODO AUTH
+    string username((char*) &_inBuffer[5+1], _inBuffer[5]);
     how_much_read += username.length();
     if(how_much_read >= ntohl(msg->hdr.msglen)){
         sendErrorMsg("accessfail", true);
         return;
     }
-    string hash(_inBuffer.data() + sizeof(msg->hdr) + 1 + chunk->len,
-        int(ntohl(msg->hdr.msglen) - sizeof(msg->hdr) - 1 - chunk->len));
+    string hash(_inBuffer.data() + sizeof(msg->hdr) + 1 + username.length(),
+        int(ntohl(msg->hdr.msglen) - sizeof(msg->hdr) - 1 - username.length()));
 
     if(hash.length() != 20){ //no valid hash
         sendErrorMsg("access fail", true);
+        msg = NULL;
         return;
     }
+    msg = NULL;
 
     _logger.information("Getting authorization request for "+username);
     try {
@@ -317,10 +311,8 @@ void BrokerConnection::authUser()
             _state = S_AUTHENTICATED;
         } else {
             _logger.information("Authentication failed for "+username);
-            msg = hpf_msg_error("Authentication failed");
-            _sock.sendBytes(msg, ntohl(msg->hdr.msglen));
+            sendErrorMsg("Authentication failed", true);
             _state = S_INIT;
-            hpf_msg_delete(msg);
         }
     } catch(Poco::Exception& e) {
         _logger.error(e.displayText());

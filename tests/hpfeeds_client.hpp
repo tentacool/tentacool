@@ -3,7 +3,7 @@
 
 #include <Poco/Net/SocketStream.h>
 #include "hpfeeds.hpp"
-#define CHUNK 1024
+#define INITIAL_CHUNK 1024 //1KB
 #define MAX_BUF 10*1024 + 5
 
 using namespace std;
@@ -30,7 +30,8 @@ private:
     Net::StreamSocket* _sock;
     string _broker_name;
     uint32_t _nonce;
-    char _inBuffer[MAX_BUF];
+    //char _inBuffer[MAX_BUF];
+    vector<char> _inBuffer;
 };
 
 #endif

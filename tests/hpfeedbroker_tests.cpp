@@ -11,9 +11,10 @@
 #include <cppunit/TestRunner.h>
 
 // The test execution order follow the suite registration order
+
 CPPUNIT_TEST_SUITE_REGISTRATION(Authenticator_test);
-CPPUNIT_TEST_SUITE_REGISTRATION(Hpfeeds_test);
 CPPUNIT_TEST_SUITE_REGISTRATION(DataManager_test);
+CPPUNIT_TEST_SUITE_REGISTRATION(Hpfeeds_test);
 CPPUNIT_TEST_SUITE_REGISTRATION(Integration_test);
 
 class CoverageScannerListener : public TestListener
