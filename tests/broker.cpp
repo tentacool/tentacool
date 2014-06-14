@@ -58,6 +58,8 @@ BrokerApplication::BrokerApplication() :
 {
     //Default broker name
     BrokerConnection::Broker_name="@hp1";
+    //Set default priority of the logger messages
+    logger.setLevel(Message::PRIO_INFORMATION);
 }
 
 BrokerApplication::~BrokerApplication()
@@ -328,6 +330,9 @@ int BrokerApplication::main(const std::vector<std::string>& args)
             waitForTerminationRequest();
 
             server.stop();
+
+            //free data_manager
+            delete _data_manager;
         }
         }catch(exception& e){
             logger.information(e.what());

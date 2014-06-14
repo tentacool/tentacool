@@ -7,6 +7,9 @@
 #include <cppunit/TestFixture.h>
 #include <cppunit/TestCase.h>
 
+#define BROKER_SETUP_WAIT 2
+#define BROKER_OPS_COMPLETION 2
+
 using namespace CppUnit;
 using namespace std;
 

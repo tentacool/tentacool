@@ -76,6 +76,8 @@ public:
     {
         //Default broker name
         BrokerConnection::Broker_name="@hp1";
+        //Set default priority of the logger messages
+        logger.setLevel(Message::PRIO_INFORMATION);
     }
 
         ~BrokerApplication()
@@ -345,6 +347,9 @@ protected:
             waitForTerminationRequest();
 
             server.stop();
+
+            //free data_manager
+            delete _data_manager;
         }
         }catch(exception& e){
             logger.information(e.what());

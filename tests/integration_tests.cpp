@@ -33,7 +33,17 @@ void *run(void * args)
     Arguments* a = reinterpret_cast<Arguments*>(args);
 #ifdef DEBUG
     cout <<endl<<"Starting broker thread..." << endl;
+#else
+    //Redirect the output to /dev/null
+    ofstream redirect_output("/dev/null");
+
+    // save output buffer of cout
+    streambuf * strm_buffer = cout.rdbuf();
+
+    // redirect output into file
+    cout.rdbuf(redirect_output.rdbuf());
 #endif
+
     try {
         BrokerApplication app;
         app.run(a->size(), reinterpret_cast<char**>(a->data()));
@@ -41,6 +51,10 @@ void *run(void * args)
         cerr << exc.displayText() << endl;
         a = NULL;
     }
+#ifndef DEBUG
+    // restore old buffer
+    cout.rdbuf(strm_buffer);
+#endif
     a = NULL;
     return NULL;
 }
@@ -80,7 +94,7 @@ Integration_test::Integration_test()
     //Get the path of the executable
     char pBuf[PATH_MAX];
     int path_len = getPath(pBuf);
-    if(path_len > 0) {
+    if (path_len > 0) {
         _exe_path = string(pBuf, path_len);
     }
 }
@@ -90,7 +104,7 @@ int Integration_test::getPath(char* pBuf)
     char szTmp[PATH_MAX];
     sprintf(szTmp, "/proc/self/exe");
     int bytes = readlink(szTmp, pBuf, PATH_MAX);
-    if(bytes >= 0){
+    if (bytes >= 0) {
         pBuf[bytes] = '\0';
         string line(pBuf, bytes);
         line = line.substr(0, line.find_last_of("\\/"));
@@ -107,7 +121,7 @@ void Integration_test::testHelp()
     a->insert(a->end(),"tentacool_integration_test");
     a->insert(a->end(),"-h");
     pthread_t broker_thread = startBroker(a);
-    sleep(1); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     stopBroker(broker_thread);
     sleep(1);
     delete a;
@@ -115,12 +129,12 @@ void Integration_test::testHelp()
 
 void Integration_test::testDebugSettings()
 {
+    //Also test the logging on file
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
     a->insert(a->end(),"-d");
-    a->insert(a->end(),"-v");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     stopBroker(broker_thread);
     sleep(1);
     delete a;
@@ -140,7 +154,7 @@ void Integration_test::testWrongFile()
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/wrong_file.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     stopBroker(broker_thread);
     sleep(1);
     delete a;
@@ -148,7 +162,6 @@ void Integration_test::testWrongFile()
 
 void Integration_test::testConnectDisconnect()
 {
-    //Also test the logging on file
     Arguments* a = new Arguments();
     a->insert(a->end(),"tentacool_integration_test");
 #ifdef DEBUG
@@ -162,11 +175,11 @@ void Integration_test::testConnectDisconnect()
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
 
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client;
     client.connect();
     client.disconnect();
-    sleep(1);
+    sleep(BROKER_OPS_COMPLETION);
     stopBroker(broker_thread);
     sleep(1);
     delete a;
@@ -188,7 +201,7 @@ void Integration_test::testDifferentPortAndName()
     a->insert(a->end(),"-p10127");
     a->insert(a->end(),"-nBroker2");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     stopBroker(broker_thread);
     sleep(1);
     delete a;
@@ -208,13 +221,13 @@ void Integration_test::testAuthentication()
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client;
     client.connect();
     sleep(1);
     client.receive_info_message();
     client.send_auth_message("aldo", "s3cr3t");
-    sleep(1);
+    sleep(BROKER_OPS_COMPLETION);
     client.disconnect();
     stopBroker(broker_thread);
     sleep(1);
@@ -235,7 +248,7 @@ void Integration_test::testFailAuthentication()
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client;
     client.connect();
     sleep(1);
@@ -263,12 +276,11 @@ void Integration_test::testWrongAuthenticationMsg()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client;
     client.connect();
     sleep(1);
     client.receive_info_message();
-    //client.send_auth_message("aldo", "wrong_secret");
     client.send_subscribe_message("aldo", "ch1"); //Instead of an auth msg
     sleep(1);
     client.receive_error_message();
@@ -292,13 +304,12 @@ void Integration_test::testTooLongAuthenticationMsg()
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client;
     client.connect();
     sleep(1);
     client.receive_info_message();
-    //client.send_auth_message("aldo", "wrong_secret");
-    client.send_wrong_message(300,OP_AUTH, "data"); //Instead of an auth msg
+    client.send_wrong_message(300,OP_AUTH, "data");
     sleep(1);
     client.receive_error_message();
     client.disconnect();
@@ -321,13 +332,14 @@ void Integration_test::testTooBigMessage()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client;
     client.connect();
     sleep(1);
     client.receive_info_message();
     client.send_auth_message("aldo", "s3cr3t");
-    client.send_wrong_message(10*1024*1024 + 5 + 1, OP_SUBSCRIBE, "data");
+    client.send_wrong_message(10*1024*1024 + 5 + 1, OP_SUBSCRIBE,
+                                "This string is smaller, but doesn't matter.");
     sleep(1);
     client.disconnect();
     stopBroker(broker_thread);
@@ -349,14 +361,14 @@ void Integration_test::testSubscribe()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client;
     client.connect();
     sleep(1);
     client.receive_info_message();
     client.send_auth_message("aldo", "s3cr3t");
     client.send_subscribe_message("aldo", "ch1");
-    sleep(1);
+    sleep(BROKER_OPS_COMPLETION);
     client.disconnect();
     stopBroker(broker_thread);
     sleep(1);
@@ -377,7 +389,7 @@ void Integration_test::testDoubleSubscribe()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client;
     client.connect();
     sleep(1);
@@ -385,7 +397,7 @@ void Integration_test::testDoubleSubscribe()
     client.send_auth_message("aldo", "s3cr3t");
     client.send_subscribe_message("aldo", "ch1");
     client.send_subscribe_message("aldo", "ch1");
-    sleep(1);
+    sleep(BROKER_OPS_COMPLETION);
     client.disconnect();
     stopBroker(broker_thread);
     sleep(1);
@@ -406,7 +418,7 @@ void Integration_test::testSubscribeNotAllowed()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client;
     client.connect();
     sleep(1);
@@ -435,7 +447,7 @@ void Integration_test::testPublish()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client_sub;
     Hpfeeds_client client_pub;
     //SUBSCRIBER
@@ -474,7 +486,7 @@ void Integration_test::testPublishNoChannel()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client_sub;
     Hpfeeds_client client_pub;
     //SUBSCRIBER
@@ -513,7 +525,7 @@ void Integration_test::testPublishNotAllowed()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client_sub;
     Hpfeeds_client client_pub;
     //SUBSCRIBER
@@ -552,7 +564,7 @@ void Integration_test::testWrongOpCode()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client_sub;
     //SUBSCRIBER
     client_sub.connect();
@@ -583,7 +595,7 @@ void Integration_test::testWrongTotalLength()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client_sub;
     //SUBSCRIBER
     client_sub.connect();
@@ -614,7 +626,7 @@ void Integration_test::testPublishBigMessage()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client_sub;
     Hpfeeds_client client_pub;
     //CREATING BIG DATA
@@ -660,7 +672,7 @@ void Integration_test::testPublishConcurrency()
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
     Hpfeeds_client client_sub;
     Hpfeeds_client client_pub;
     //SUBSCRIBER

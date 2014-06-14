@@ -297,7 +297,7 @@ void BrokerConnection::authUser()
         int(ntohl(msg->hdr.msglen) - sizeof(msg->hdr) - 1 - username.length()));
 
     if(hash.length() != 20){ //no valid hash
-        sendErrorMsg("access fail", true);
+        sendErrorMsg("accessfail", true);
         msg = NULL;
         return;
     }
@@ -312,11 +312,11 @@ void BrokerConnection::authUser()
         } else {
             _logger.information("Authentication failed for "+username);
             sendErrorMsg("Authentication failed", true);
-            _state = S_INIT;
+            _state = S_ERROR;
         }
     } catch(Poco::Exception& e) {
         _logger.error(e.displayText());
-        sendErrorMsg("accessfail", true);
+        sendErrorMsg("accessfail", false);
     }
 }
 

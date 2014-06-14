@@ -41,6 +41,7 @@ void Hpfeeds_client::receive_error_message()
 {
     uint32_t total_length;
     uint8_t op_code;
+    uint32_t payload_length;
     Poco::Timespan timeOut(10, 0); //sec, usec
     _inBuffer.clear();
     if (!_sock->poll(timeOut, Net::Socket::SELECT_READ) == false) {
@@ -51,13 +52,15 @@ void Hpfeeds_client::receive_error_message()
         //GET OPCODE
         memcpy(&op_code,_inBuffer.data()+sizeof(uint32_t),sizeof(uint8_t));
         //get the rest
+        payload_length = ntohl(total_length) - sizeof(uint32_t) -
+                                                            sizeof(uint8_t);
         _sock->receiveBytes(_inBuffer.data() + sizeof(uint32_t) +
-                sizeof(uint8_t), ntohl(total_length) -
-                sizeof(uint32_t) - sizeof(uint8_t));
+                sizeof(uint8_t), payload_length);
+        string err_msg(reinterpret_cast<char*>(_inBuffer.data()) +
+                        sizeof(uint32_t) + sizeof(uint8_t), payload_length);
     #ifdef DEBUG
         if (op_code == OP_ERROR) {
-            cout<<"Server answered with an error message: "<<
-                (_inBuffer.data()+sizeof(uint32_t) + sizeof(uint8_t))<<endl;
+            cout<<"Server answered with an error message: "<< err_msg <<endl;
         }
     #endif
     }
@@ -67,6 +70,7 @@ void Hpfeeds_client::receive_info_message()
     hpf_msg_t* msg = NULL;
     uint32_t total_length;
     uint8_t op_code;
+    uint32_t payload_length;
     Poco::Timespan timeOut(10, 0); //sec, usec
     _inBuffer.clear();
     if (!_sock->poll(timeOut,Net::Socket::SELECT_READ) == false){
@@ -76,17 +80,16 @@ void Hpfeeds_client::receive_info_message()
         //GET OPCODE
         memcpy(&op_code,_inBuffer.data()+sizeof(uint32_t),sizeof(uint8_t));
         //get the rest
+        payload_length = ntohl(total_length) - sizeof(uint32_t) -
+                                                            sizeof(uint8_t);
         _sock->receiveBytes(_inBuffer.data() + sizeof(uint32_t) +
-                sizeof(uint8_t), ntohl(total_length) -
-                sizeof(uint32_t) - sizeof(uint8_t));
-        //msg = hpf_msg_new();
-        //TODO devo allocare data in msg
+                sizeof(uint8_t), payload_length);
+
         msg = reinterpret_cast<hpf_msg_t*>(_inBuffer.data());
-        //memcpy(msg,_inBuffer,ntohl(total_length));
 
         //Getting the broker name
         hpf_chunk_t *b_name = hpf_msg_get_chunk(
-                reinterpret_cast<u_char*>(_inBuffer.data()) + sizeof(msg->hdr),
+            reinterpret_cast<u_char*>(_inBuffer.data()) + sizeof(msg->hdr),
                                                                 msg->data[0]);
         string broker_name(reinterpret_cast<char*>(b_name->data),
                                                       b_name->len);
@@ -102,6 +105,7 @@ void Hpfeeds_client::receive_publish_message()
     hpf_msg_t* msg = NULL;
     uint32_t total_length;
     uint8_t op_code;
+    uint32_t payload_length;
     Poco::Timespan timeOut(10, 0); //sec, usec
     _inBuffer.clear();
     if (!_sock->poll(timeOut,Net::Socket::SELECT_READ) == false){
@@ -111,10 +115,11 @@ void Hpfeeds_client::receive_publish_message()
         //GET OPCODE
         memcpy(&op_code,_inBuffer.data()+sizeof(uint32_t),sizeof(uint8_t));
         //Receive the rest
+        payload_length = ntohl(total_length) - sizeof(uint32_t) -
+                                                            sizeof(uint8_t);
         while (_sock->poll(timeOut,Net::Socket::SELECT_READ) == false);
         _sock->receiveBytes(_inBuffer.data() + sizeof(uint32_t) +
-                sizeof(uint8_t), ntohl(total_length) -
-                sizeof(uint32_t) - sizeof(uint8_t));
+                sizeof(uint8_t), payload_length);
         //cout<<"BYTE LETTI PUBLISH: "<<nbytes<<endl;
 
         //msg = hpf_msg_new();
