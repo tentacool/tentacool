@@ -162,9 +162,9 @@ void Integration_test::testWrongFile()
 
 void Integration_test::testConnectDisconnect()
 {
-    Arguments* a;
-    pthread_t broker_thread;
     try{
+        Arguments* a;
+        pthread_t broker_thread;
         a = new Arguments();
         a->insert(a->end(),"tentacool_integration_test");
     #ifdef DEBUG
@@ -189,9 +189,6 @@ void Integration_test::testConnectDisconnect()
         delete a;
     }catch(Poco::Exception& exc){
         cout<<exc.displayText()<<endl;
-        stopBroker(broker_thread);
-        sleep(1);
-        delete a;
     }
 }
 
