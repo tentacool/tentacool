@@ -162,27 +162,37 @@ void Integration_test::testWrongFile()
 
 void Integration_test::testConnectDisconnect()
 {
-    Arguments* a = new Arguments();
-    a->insert(a->end(),"tentacool_integration_test");
-#ifdef DEBUG
-    a->insert(a->end(),"-d");
-    a->insert(a->end(),"-v");
-#endif
-#ifdef __WITH_MONGO__
-    a->insert(a->end(),"-m");
-    a->insert(a->end(),"file");
-#endif
-    a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
+    Arguments* a;
+    pthread_t broker_thread;
+    try{
+        a = new Arguments();
+        a->insert(a->end(),"tentacool_integration_test");
+    #ifdef DEBUG
+        a->insert(a->end(),"-d");
+        a->insert(a->end(),"-v");
+    #endif
+    #ifdef __WITH_MONGO__
+        a->insert(a->end(),"-m");
+        a->insert(a->end(),"file");
+    #endif
+        a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
 
-    pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
-    Hpfeeds_client client;
-    client.connect();
-    client.disconnect();
-    sleep(BROKER_OPS_COMPLETION);
-    stopBroker(broker_thread);
-    sleep(1);
-    delete a;
+        broker_thread = startBroker(a);
+        sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+        Hpfeeds_client client;
+        client.connect();
+        sleep(1);
+        client.disconnect();
+        sleep(BROKER_OPS_COMPLETION);
+        stopBroker(broker_thread);
+        sleep(1);
+        delete a;
+    }catch(Poco::Exception& exc){
+        cout<<exc.displayText()<<endl;
+        stopBroker(broker_thread);
+        sleep(1);
+        delete a;
+    }
 }
 
 void Integration_test::testDifferentPortAndName()
