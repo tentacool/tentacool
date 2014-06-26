@@ -323,5 +323,9 @@ void BrokerConnection::authUser()
 BrokerConnection::~BrokerConnection()
 {
     if (_state == S_SUBSCRIBED) _router.unsubscribe(&_sock);
+<<<<<<< HEAD
     else _logger.information("Closed connection");
+=======
+    //else _logger.information("Closed connection from: "+this->ip());
+>>>>>>> origin/devel-aldo
 }
