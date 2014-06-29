@@ -17,9 +17,7 @@
 using namespace std;
 using namespace Poco;
 
-//!
-//!To test the BrokerApplication you can use any terminal with "telnet localhost 10000".
-//!10000 is the default port.
+//! BrokerApplication manage the Application structure and options
 class BrokerApplication : public Util::ServerApplication
 {
 public:
@@ -34,6 +32,8 @@ protected:
     void handleOption(const string& name, const string& value);
     void handleMode(const string& name, const string& value);
     void handlePort(const string& name, const string& value);
+    void handleServerParams(const std::string& name,
+                                                    const std::string& value);
     void displayHelp();
     int main(const vector<string>& args);
 private:

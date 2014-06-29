@@ -22,8 +22,7 @@
 using namespace std;
 using namespace Poco;
 
-//! Manage the data reading (name, auth_keys and publish/subscribe channels) from
-// a file or a MongoDB collection
+//! DataManager manage the data reading from a file or a MongoDB collection
 class DataManager
 {
     typedef struct{

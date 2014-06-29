@@ -5,9 +5,8 @@
 #include "rw_lock_t.hpp"
 
 using namespace std;
-//! Template class implementing thread-safe operations on a std::set
-//! by using the rw_lock_t class, which perform the functionalities
-//! of read/write lock mutex
+
+//! SafeSet is a template class implementing thread-safe operations on a set
 template <class T> class SafeSet {
 
     /*static*/ ReadWriteLock _mutex;
@@ -19,12 +18,12 @@ public:
 
     SafeSet()
     {
-
     }
+
     virtual ~SafeSet()
     {
-
     }
+
     iterator find(const T& val)
     { //! thread-safe find()
         _mutex.r_lock();
@@ -54,7 +53,7 @@ public:
         return size;
     }
     pair<iterator,bool> insert (const T& val)
-    { //! thread-safe insert(val)
+    { //! thread-safe insert(const T& val)
         _mutex.w_lock();
         pair<iterator,bool> p = _unsafe_set.insert(val);
         _mutex.w_unlock();
@@ -62,7 +61,7 @@ public:
 
     }
     uint32_t erase (const T& val)
-    { //! thread-safe erase(val)
+    { //! thread-safe erase(const T& val)
         _mutex.w_lock();
         uint32_t res = _unsafe_set.erase(val);
         _mutex.w_unlock();

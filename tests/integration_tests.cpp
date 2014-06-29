@@ -127,6 +127,24 @@ void Integration_test::testHelp()
     delete a;
 }
 
+void Integration_test::testServerParams()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+#ifdef DEBUG
+    a->insert(a->end(),"-d");
+    a->insert(a->end(),"-v");
+#endif
+    a->insert(a->end(),"--max_thread=12");
+    a->insert(a->end(),"--max_queued=25");
+    a->insert(a->end(),"--idletime=50");
+    pthread_t broker_thread = startBroker(a);
+    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    stopBroker(broker_thread);
+    sleep(1);
+    delete a;
+}
+
 void Integration_test::testDebugSettings()
 {
     //Also test the logging on file
@@ -791,6 +809,9 @@ Test *Integration_test::suite()
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testHelp",
                     &Integration_test::testHelp));
+    suiteOfTests->addTest(
+            new CppUnit::TestCaller<Integration_test>("testServerParams",
+                    &Integration_test::testServerParams));
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testDebugSettings",
                     &Integration_test::testDebugSettings));

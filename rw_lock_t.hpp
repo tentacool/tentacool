@@ -3,10 +3,7 @@
 
 #include <pthread.h>
 
-//!
-//! This is an implementation of a read/write lock.
-//! It's useful in our case because read accesses to shared data are much more
-//! frequent than write accesses.
+//! ReadWriteLock is an implementation of a read/write lock.
 class ReadWriteLock
 {
     int NoOfReaders, NoOfWriters, NoOfWritersWaiting;

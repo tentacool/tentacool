@@ -38,6 +38,7 @@ using Poco::AutoPtr;
 using Poco::Channel;
 using Poco::PatternFormatter;
 
+//! TCPConnectionFactory create the TCP connections
 class TCPConnectionFactory : public Poco::Net::TCPServerConnectionFactory
 {
 public:
@@ -47,7 +48,8 @@ public:
     ~TCPConnectionFactory()
     {}
 
-    Poco::Net::TCPServerConnection* createConnection(const Poco::Net::StreamSocket& socket)
+    Poco::Net::TCPServerConnection* createConnection(const
+                                                     Net::StreamSocket& socket)
     {
         return new BrokerConnection(socket, _data_m);
     }
@@ -56,10 +58,7 @@ private:
     DataManager*    _data_m;
 };
 
-//!
-//!To test the BrokerApplication you can use any terminal with "telnet localhost 10000".
-//!10000 is the default port.
-
+//! BrokerApplication manage the Application structure and options
 class BrokerApplication : public Poco::Util::ServerApplication
 {
 public:
@@ -82,7 +81,7 @@ public:
 
         ~BrokerApplication()
     {   //! Destructor
-            if(!m_helpRequested)logger.information("HpfeedsBroker shutting down");
+        if(!m_helpRequested)logger.information("HpfeedsBroker shutting down");
     }
 
 protected:
@@ -105,28 +104,33 @@ protected:
         Poco::Util::ServerApplication::defineOptions(options);
 
         options.addOption(
-        Poco::Util::Option("help", "h", "display help information on command line arguments")
+        Poco::Util::Option("help", "h", "display help information on command"
+                                                            " line arguments")
             .required(false)
             .repeatable(false));
 
         options.addOption(
-        Poco::Util::Option("debug", "d", "active the debug informations printing")
+        Poco::Util::Option("debug", "d",
+                                      "active the debug informations printing")
             .required(false)
             .repeatable(false));
 
         options.addOption(
-        Poco::Util::Option("log_stdout", "v", "write broker output on the stdout")
+        Poco::Util::Option("log_stdout", "v",
+                                           "write broker output on the stdout")
             .required(false)
             .repeatable(false));
 
         options.addOption(
-        Poco::Util::Option("name", "n", "give a name to the broker (@hp1 default)")
+        Poco::Util::Option("name", "n",
+                                    "give a name to the broker (@hp1 default)")
             .required(false)
             .argument("<name of the broker>")
             .repeatable(false));
 
         options.addOption(
-        Poco::Util::Option("port", "p", "define the port HpfeedsBroker will listen to")
+        Poco::Util::Option("port", "p",
+                                "define the port HpfeedsBroker will listen to")
             .required(false)
             .argument("<port number>")
             .validator(new Util::IntValidator(1024, 65535))
@@ -134,14 +138,48 @@ protected:
                 (this, &BrokerApplication::handlePort)));
 
         options.addOption(
-        Poco::Util::Option("file", "f", "filename where fetch the authentication data")
+        Poco::Util::Option("file", "f",
+                                "filename where fetch the authentication data")
             .required(false)
             .argument("<filename>")
             .repeatable(false));
 
+        options.addOption(
+        Poco::Util::Option("max_thread", "max_th",
+                "define the maximum number of simultaneous threads available. "
+                "The default value is 10")
+            .required(false)
+            .argument("<Max threads>")
+            .validator(new Util::IntValidator(10, 64))
+            .callback(Poco::Util::OptionCallback<BrokerApplication>
+                (this, &BrokerApplication::handleServerParams)));
+
+        options.addOption(
+        Poco::Util::Option("max_queued", "max_q",
+                "the maximum number of queued connections. "
+                "If there are already the maximum number of connections "
+                "in the queue, new connections will be silently discarded. "
+                "The default value is 20")
+            .required(false)
+            .argument("<Max queued conns>")
+            .validator(new Util::IntValidator(10, 64))
+            .callback(Poco::Util::OptionCallback<BrokerApplication>
+                (this, &BrokerApplication::handleServerParams)));
+
+        options.addOption(
+        Poco::Util::Option("idletime", "idle",
+                "define the maximum idle time for a thread before it is "
+                "terminated. The default value is 100")
+            .required(false)
+            .argument("<Idle time>")
+            .validator(new Util::IntValidator(10, 200))
+            .callback(Poco::Util::OptionCallback<BrokerApplication>
+                (this, &BrokerApplication::handleServerParams)));
+
 #ifdef __WITH_MONGO__
         options.addOption(
-        Poco::Util::Option("mode", "m", "set the way to fetch authentication data")
+        Poco::Util::Option("mode", "m",
+                                    "set the way to fetch authentication data")
             .required(false)
             .argument("<file|mongodb>")
             .validator(new Util::RegExpValidator("file|mongodb"))
@@ -154,7 +192,8 @@ protected:
             .argument("<IP of mongodb>")
             .repeatable(false));
         options.addOption(
-        Poco::Util::Option("mongoport", "m_port", "The port where mongodb is listening to")
+        Poco::Util::Option("mongoport", "m_port",
+                                      "The port where mongodb is listening to")
             .required(false)
             .argument("<Port of mongodb>")
             .repeatable(false));
@@ -164,7 +203,8 @@ protected:
             .argument("<Name of mongo DB>")
             .repeatable(false));
         options.addOption(
-        Poco::Util::Option("mongocoll", "m_coll", "The the name of the collection in 'mongodb' database")
+        Poco::Util::Option("mongocoll", "m_coll",
+                        "The the name of the collection in 'mongodb' database")
             .required(false)
             .argument("<Mongo Collection>")
             .repeatable(false));
@@ -231,23 +271,43 @@ protected:
         logger.information("HpfeedsBroker port setted to " +
                 NumberFormatter::format(port));
     }
+
+    void handleServerParams(const std::string& name,
+                                                    const std::string& value)
+    {
+        //! Handle Server Parameters
+        //!\param name is a string with the option name.
+        //!\param value is a string with the value.
+        if(name == "max_thread"){
+            num_threads = NumberParser::parseUnsigned(value);
+        }else if(name == "max_queued"){
+            queuelen = NumberParser::parseUnsigned(value);
+        }else if(name == "idletime"){
+            idletime = NumberParser::parseUnsigned(value);
+        }
+    }
+
     void displayHelp()
     {
         //! Display the result of -h option
         Poco::Util::HelpFormatter helpFormatter(options());
+        helpFormatter.setWidth(120);
         helpFormatter.setCommand(commandName());
 #ifdef __WITH_MONGO__
         helpFormatter.setUsage("HpfeedsBroker can run in two modes: \n"
-            "-n name    [Give a specific name to the broker - default '@hp1']\n"
-            "-m file    [Fetch users authentication datas from a structured file]\n"
-            "-m mongodb [Fetch users authentication datas from mongodb collection]\n\n"
-            "If not specified the broker fetch data from a file named 'auth_keys.dat'\n");
+        "-n name    [Give a specific name to the broker - default '@hp1']\n"
+        "-m file    [Fetch users authentication datas from a structured file]"
+        "\n"
+        "-m mongodb [Fetch users authentication datas from mongodb collection]"
+        "\n\n"
+        "If not specified the broker fetch data from the file: 'auth_keys.dat'"
+        "\n");
 #else
         helpFormatter.setUsage("HpfeedsBroker is running in file mode: \n"
-            " broker fetch users authentication datas from a structured file\n\n"
-            "If not specified the broker fetch data from a file named 'auth_keys.dat'\n"
-            "-n name    [Give a specific name to the broker - default '@hp1']\n"
-            "-f file    [Give a specific filename for authentication datas]\n");
+        " broker fetch users authentication datas from a structured file\n\n"
+        "If not specified the broker fetch data from the file: 'auth_keys.dat'\n"
+        "-n name    [Give a specific name to the broker - default '@hp1']\n"
+        "-f file    [Give a specific filename for authentication datas]\n");
 #endif
         helpFormatter.setHeader("HpfeedsBroker is a hpfeeds messages broker.");
         helpFormatter.format(std::cout);
@@ -255,6 +315,7 @@ protected:
 
     int getPath(char* pBuf)
     {
+        //! Retrieve the path of the Broker executable
         char szTmp[PATH_MAX];
         sprintf(szTmp, "/proc/self/exe");
         int bytes = readlink(szTmp, pBuf, PATH_MAX);
@@ -283,9 +344,11 @@ protected:
             sfChannel->setProperty("path", _log_file);
             sfChannel->setProperty("rotation", "2 K"); //Overwrite file at 2KB
             AutoPtr<PatternFormatter> sfPF(new PatternFormatter);
-            sfPF->setProperty("pattern", "[Th. %I] %Y-%m-%d %H:%M:%S [%p] %s: %t");
+            sfPF->setProperty("pattern",
+                                    "[Th. %I] %Y-%m-%d %H:%M:%S [%p] %s: %t");
 
-            AutoPtr<FormattingChannel> sfFC(new FormattingChannel(sfPF, sfChannel));
+            AutoPtr<FormattingChannel>
+                                  sfFC(new FormattingChannel(sfPF, sfChannel));
             AutoPtr<ConsoleChannel> cc (new ConsoleChannel());
 
             AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
@@ -313,7 +376,7 @@ protected:
             #ifdef __WITH_MONGO__
                 if(!_data_mode) _data_manager = new DataManager(_filename);
                 else _data_manager = new DataManager(_mongo_ip,_mongo_port,
-                                                    _mongo_db,_mongo_collection);
+                                                  _mongo_db,_mongo_collection);
             #else
                 _data_manager = new DataManager(_filename);
             #endif

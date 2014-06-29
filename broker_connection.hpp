@@ -42,10 +42,9 @@ static map<int, uint32_t>
                         {OP_SUBSCRIBE, HEADER + 2 + 256 * 2},
                         {OP_UNSUBSCRIBE, HEADER + 2 + 256 * 2}};
 
-//! BrokerConnection managed the main logic of the broker
+//! BrokerConnection manage the main logic of the broker
 class BrokerConnection : public Poco::Net::TCPServerConnection {
-    //! Reference to the client socket
-    Poco::Net::StreamSocket& _sock; ///! Reference to the client socket
+    Poco::Net::StreamSocket& _sock; //!< Reference to the client socket
 public:
     //! Constructor
     BrokerConnection(const Poco::Net::StreamSocket& s, DataManager* data_manager);

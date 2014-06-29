@@ -14,9 +14,9 @@
 using namespace Poco;
 using namespace std;
 
-//!File Constructor
-//!\brief Initialize the users data structures reading from file
-//!\param filename
+//! File Constructor
+//! \brief Initialize the users data structures reading from file
+//! \param filename The name of the file with the auth_keys
 DataManager::DataManager( string filename):
     _logger(Logger::get("HF_Broker")), _mode(false), _filename(filename)
 {

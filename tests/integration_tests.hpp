@@ -25,6 +25,7 @@ public:
     pthread_t startBroker(Arguments* args);
     void stopBroker(pthread_t t);
     void testHelp();
+    void testServerParams();
     void testDebugSettings();
     void testConnectDisconnect();
     void testDifferentPortAndName();

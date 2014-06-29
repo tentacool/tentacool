@@ -15,8 +15,7 @@ typedef Poco::Net::StreamSocket* StreamSocketPtr;
 typedef SafeSet<StreamSocketPtr> StreamSocketPtrSet;   //Here I'm using my own thread_safe set
 typedef std::map<HPChannel, StreamSocketPtrSet> ChannelMap;
 
-//! MessageRouter main work is deliver publish messages through channels and
-//! gave it to the users who registered to them
+//! MessageRouter manage the spread of a publish to the subscribers
 class MessageRouter {
     //! Container for all client, divided by channel
     ChannelMap _channels;
