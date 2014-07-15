@@ -2,7 +2,7 @@
 #define __HPFEEDS_CLIENT__
 
 #include <Poco/Net/SocketStream.h>
-#include "hpfeeds.hpp"
+#include "../hpfeeds.hpp"
 #define INITIAL_CHUNK 1024 //1KB
 #define MAX_BUF 10*1024 + 5
 

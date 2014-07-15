@@ -1,7 +1,7 @@
 #ifndef __DATAMANAGERTESTS__
 #define __DATAMANAGERTESTS__
 
-#include "data_manager.hpp"
+#include "../data_manager.hpp"
 #include <cppunit/TestFixture.h>
 #include <cppunit/TestCase.h>
 

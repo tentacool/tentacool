@@ -1,7 +1,7 @@
 #ifndef __AUTHENTICATORTESTS__
 #define __AUTHENTICATORTESTS__
 
-#include "authenticator.hpp"
+#include "../authenticator.hpp"
 #include <cppunit/TestFixture.h>
 #include <cppunit/TestCase.h>
 

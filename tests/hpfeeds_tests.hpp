@@ -1,7 +1,7 @@
 #ifndef __HPFEEDS_TESTS__
 #define __HPFEEDS_TESTS__
 
-#include "hpfeeds.hpp"
+#include "../hpfeeds.hpp"
 #include <cppunit/TestFixture.h>
 #include <cppunit/TestCase.h>
 

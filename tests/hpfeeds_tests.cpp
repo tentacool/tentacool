@@ -1,5 +1,4 @@
 #include "hpfeeds_tests.hpp"
-#include "hpfeeds.hpp"
 #include <cppunit/TestListener.h>
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>

@@ -24,8 +24,7 @@
 #include "Poco/Net/TCPServerConnectionFactory.h"
 #include <unistd.h>
 #include "broker.hpp"
-#include "broker_connection.hpp"
-#include "data_manager.hpp"
+#include "../broker_connection.hpp"
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>

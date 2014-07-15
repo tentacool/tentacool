@@ -3,7 +3,6 @@
 #endif
 
 #include "data_manager_tests.hpp"
-#include "data_manager.hpp"
 #include <memory>
 #include <limits.h>
 #include <unistd.h>

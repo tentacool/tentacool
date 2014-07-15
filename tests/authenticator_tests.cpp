@@ -1,5 +1,4 @@
 #include "authenticator_tests.hpp"
-#include "authenticator.hpp"
 #include <cppunit/TestListener.h>
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
