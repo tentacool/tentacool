@@ -21,9 +21,9 @@ DataManager::DataManager( string filename):
     _logger(Logger::get("HF_Broker")), _mode(false), _filename(filename)
 {
     _input.open(_filename.c_str());
-    if(!_input) throw Poco::Exception("Error opening the file");
+    if(!_input) throw Poco::Exception("Error opening the file:"+filename);
     string line = "";
-    while(getline(_input,line )){
+    while(getline(_input, line)) {
         //TODO More input Validation?
         if(line.empty()) break;
         if(line.length() > 4*MAX_FIELD_LENGTH)
@@ -70,7 +70,7 @@ DataManager::DataManager(const string mongo_ip, const string mongo_port,
     unique_ptr<mongo::DBClientCursor> cursor =
             (move(_conn.query(_mongo_db+"."+_mongo_collection)));
 
-    while(cursor->more()){ //for every document
+    while(cursor->more()) { //for every document
         mongo::BSONObj p = cursor->next();
         user_data u;		//new user_data
         vector<string> subscribe_vector;
@@ -98,7 +98,7 @@ const string DataManager::getSecretbyName(const string name)
     //! \param Username the name of the user
     if(name.empty()) throw  Poco::Exception("Invalid User argument!");
     UserMap::const_iterator iter = _usersMap.find(name);
-    if(iter!=_usersMap.end()){ //found it!
+    if(iter!=_usersMap.end()) { //found it!
         return (*iter).second.secret;
     }else throw  Poco::Exception("User not present!");
 }
@@ -110,7 +110,7 @@ bool DataManager::may_subscribe (const string name, const string channel) const
 	//! \param Channel the name of the channel
     if(name.empty() || channel.empty()) throw  Poco::Exception("Empty name or channel!");
     UserMap::const_iterator iter = _usersMap.find(name);
-    if(iter!=_usersMap.end()){ //found it!
+    if(iter!=_usersMap.end()) { //found it!
         user_data u = (*iter).second;
         if(find(u._subscribe_chs.begin(), u._subscribe_chs.end(), channel)!=u._subscribe_chs.end())
             return true;
@@ -127,7 +127,7 @@ bool DataManager::may_publish (const string name, const string channel) const
     if(name.empty() || channel.empty()) throw Poco::Exception("Empty name or channel!");
     UserMap::const_iterator iter = _usersMap.find(name);
 
-    if(iter!=_usersMap.end()){ //found it!
+    if(iter!=_usersMap.end()) { //found it!
         user_data u = (*iter).second;
         if(find(u._publish_chs.begin(), u._publish_chs.end(), channel)!=u._publish_chs.end())
             return true;

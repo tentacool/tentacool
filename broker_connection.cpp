@@ -1,4 +1,3 @@
-#include "broker_connection.hpp"
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
@@ -6,6 +5,7 @@
 #include <Poco/NumberParser.h>
 #include <Poco/Net/NetException.h>
 #include <Poco/NumberFormatter.h>
+#include "broker_connection.hpp"
 #include "data_manager.hpp"
 #include "hpfeeds.hpp"
 
@@ -16,7 +16,8 @@ string BrokerConnection::Broker_name = "@hp1";
 
 MessageRouter BrokerConnection::_router;
 
-BrokerConnection::BrokerConnection(const Net::StreamSocket& s, DataManager* data_manager) :
+BrokerConnection::BrokerConnection(const Net::StreamSocket& s,
+                                        DataManager* data_manager) :
     Net::TCPServerConnection(s),
     _sock(this->socket()),
     _logger(Poco::Logger::get("HF_Broker")),
@@ -188,7 +189,7 @@ void BrokerConnection::run()
                                     _inBuffer[5]);
                             //cout<<s_name<<endl;
                             how_much_read += s_name.length();
-                            if(how_much_read >= ntohl(total_length)){
+                            if(how_much_read >= ntohl(total_length)) {
                                 sendErrorMsg("Invalid message -> Bad Client",
                                                                         false);
                                 how_much_read = 0;
@@ -202,14 +203,14 @@ void BrokerConnection::run()
                                    _inBuffer[HEADER + 1 + s_name.length()]);
                             //cout<<s_channel<<endl;
                             how_much_read += s_channel.length();
-                            if(how_much_read >= ntohl(total_length)){
+                            if(how_much_read >= ntohl(total_length)) {
                                sendErrorMsg("Invalid message -> Bad Client",
                                                                       false);
                                how_much_read = 0;
                                break;
                             }
 
-                            if(!_data_manager->may_publish(s_name,s_channel)){
+                            if(!_data_manager->may_publish(s_name,s_channel)) {
                                 //The client can't publish to the specified channel
                                 _logger.information(s_name +
                                             " cannot publish to "+s_channel);
@@ -281,7 +282,7 @@ void BrokerConnection::authUser()
         sendErrorMsg("accessfail", true);
         return;
     }
-    if(ntohl(msg->hdr.msglen) > message_sizes[int(msg->hdr.opcode)]){
+    if(ntohl(msg->hdr.msglen) > message_sizes[int(msg->hdr.opcode)]) {
         //If the message is too long for its type
        sendErrorMsg("accessfail", true);
        return;
@@ -289,14 +290,14 @@ void BrokerConnection::authUser()
     //TODO AUTH
     string username((char*) &_inBuffer[5+1], _inBuffer[5]);
     how_much_read += username.length();
-    if(how_much_read >= ntohl(msg->hdr.msglen)){
+    if(how_much_read >= ntohl(msg->hdr.msglen)) {
         sendErrorMsg("accessfail", true);
         return;
     }
     string hash(_inBuffer.data() + sizeof(msg->hdr) + 1 + username.length(),
         int(ntohl(msg->hdr.msglen) - sizeof(msg->hdr) - 1 - username.length()));
 
-    if(hash.length() != 20){ //no valid hash
+    if(hash.length() != 20) { //no valid hash
         sendErrorMsg("accessfail", true);
         msg = NULL;
         return;

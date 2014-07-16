@@ -4,9 +4,10 @@
 
 #include "integration_tests.hpp"
 #include "hpfeeds_client.hpp"
-#include "broker.hpp"
+#include "../broker.hpp"
 #include <Poco/Random.h>
 #include <Poco/Path.h>
+#include <Poco/NumberFormatter.h>
 #include <pthread.h>
 #include <signal.h>
 #include <unistd.h>
@@ -50,6 +51,8 @@ void *run(void * args)
     } catch (Poco::Exception& exc) {
         cerr << exc.displayText() << endl;
         a = NULL;
+        //Permit the while exiting despite of the error
+        //_brokerStarted = true;
     }
 #ifndef DEBUG
     // restore old buffer
@@ -68,13 +71,13 @@ void *run_publisher(void * args)
     Hpfeeds_client client_pub;
     try{
         client_pub.connect();
-        sleep(1);
+        sleep(BROKER_GENERIC_WAIT);
         client_pub.receive_info_message();
         client_pub.send_auth_message(data->at(1), data->at(2));
         client_pub.send_publish_message(data->at(1), data->at(3), data->at(4));
-        sleep(1);
+        sleep(BROKER_GENERIC_WAIT);
         client_pub.disconnect();
-    }catch (Poco::Exception& exc){
+    } catch (Poco::Exception& exc) {
         cerr << exc.displayText() << endl;
     }
     return NULL;
@@ -121,9 +124,9 @@ void Integration_test::testHelp()
     a->insert(a->end(),"tentacool_integration_test");
     a->insert(a->end(),"-h");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -136,12 +139,11 @@ void Integration_test::testServerParams()
     a->insert(a->end(),"-v");
 #endif
     a->insert(a->end(),"--max_thread=12");
-    a->insert(a->end(),"--max_queued=25");
     a->insert(a->end(),"--idletime=50");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -152,9 +154,9 @@ void Integration_test::testDebugSettings()
     a->insert(a->end(),"tentacool_integration_test");
     a->insert(a->end(),"-d");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -172,9 +174,9 @@ void Integration_test::testWrongFile()
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/wrong_file.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -194,14 +196,14 @@ void Integration_test::testConnectDisconnect()
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client;
     client.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client.disconnect();
     sleep(BROKER_OPS_COMPLETION);
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -221,9 +223,9 @@ void Integration_test::testDifferentPortAndName()
     a->insert(a->end(),"-p10127");
     a->insert(a->end(),"-nBroker2");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -241,16 +243,16 @@ void Integration_test::testAuthentication()
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client;
     client.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client.receive_info_message();
     client.send_auth_message("aldo", "s3cr3t");
     sleep(BROKER_OPS_COMPLETION);
     client.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -268,17 +270,17 @@ void Integration_test::testFailAuthentication()
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client;
     client.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client.receive_info_message();
     client.send_auth_message("aldo", "wrong_secret");
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client.receive_error_message();
     client.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -296,17 +298,17 @@ void Integration_test::testWrongAuthenticationMsg()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client;
     client.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client.receive_info_message();
     client.send_subscribe_message("aldo", "ch1"); //Instead of an auth msg
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client.receive_error_message();
     client.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -324,17 +326,17 @@ void Integration_test::testTooLongAuthenticationMsg()
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client;
     client.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client.receive_info_message();
     client.send_wrong_message(300,OP_AUTH, "data");
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client.receive_error_message();
     client.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -352,18 +354,18 @@ void Integration_test::testTooBigMessage()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client;
     client.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client.receive_info_message();
     client.send_auth_message("aldo", "s3cr3t");
     client.send_wrong_message(10*1024*1024 + 5 + 1, OP_SUBSCRIBE,
                                 "This string is smaller, but doesn't matter.");
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -381,17 +383,17 @@ void Integration_test::testSubscribe()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client;
     client.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client.receive_info_message();
     client.send_auth_message("aldo", "s3cr3t");
     client.send_subscribe_message("aldo", "ch1");
     sleep(BROKER_OPS_COMPLETION);
     client.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -409,10 +411,10 @@ void Integration_test::testDoubleSubscribe()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client;
     client.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client.receive_info_message();
     client.send_auth_message("aldo", "s3cr3t");
     client.send_subscribe_message("aldo", "ch1");
@@ -420,7 +422,7 @@ void Integration_test::testDoubleSubscribe()
     sleep(BROKER_OPS_COMPLETION);
     client.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -438,18 +440,18 @@ void Integration_test::testSubscribeNotAllowed()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client;
     client.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client.receive_info_message();
     client.send_auth_message("aldo", "s3cr3t");
     client.send_subscribe_message("aldo", "ch3");
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client.receive_error_message();
     client.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -467,28 +469,28 @@ void Integration_test::testPublish()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client_sub;
     Hpfeeds_client client_pub;
     //SUBSCRIBER
     client_sub.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_sub.receive_info_message();
     client_sub.send_auth_message("aldo", "s3cr3t");
     client_sub.send_subscribe_message("aldo", "ch1");
     //PUBLISHER
     client_pub.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_pub.receive_info_message();
     client_pub.send_auth_message("filippo", "pwd");
     client_pub.send_publish_message("filippo", "ch1", "testing");
     client_pub.disconnect();
     //SUBSCRIBER RECEIVE
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_sub.receive_publish_message();
     client_sub.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -506,28 +508,28 @@ void Integration_test::testPublishNoChannel()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client_sub;
     Hpfeeds_client client_pub;
     //SUBSCRIBER
     client_sub.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_sub.receive_info_message();
     client_sub.send_auth_message("aldo", "s3cr3t");
     client_sub.send_subscribe_message("aldo", "ch1");
     //PUBLISHER
     client_pub.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_pub.receive_info_message();
     client_pub.send_auth_message("filippo", "pwd");
     client_pub.send_publish_message("filippo", "ch2", "testing");
     client_pub.disconnect();
     //SUBSCRIBER RECEIVE
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_sub.receive_publish_message();
     client_sub.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -545,28 +547,28 @@ void Integration_test::testPublishNotAllowed()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client_sub;
     Hpfeeds_client client_pub;
     //SUBSCRIBER
     client_sub.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_sub.receive_info_message();
     client_sub.send_auth_message("aldo", "s3cr3t");
     client_sub.send_subscribe_message("aldo", "ch1");
     //PUBLISHER
     client_pub.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_pub.receive_info_message();
     client_pub.send_auth_message("filippo", "pwd");
     client_pub.send_publish_message("filippo", "ch77", "testing");
     //SUBSCRIBER RECEIVE
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_pub.receive_error_message();
     client_pub.disconnect();
     client_sub.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -584,20 +586,20 @@ void Integration_test::testWrongOpCode()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client_sub;
     //SUBSCRIBER
     client_sub.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_sub.receive_info_message();
     client_sub.send_auth_message("aldo", "s3cr3t");
     client_sub.send_wrong_message(13,45,"wrong message");
     //SUBSCRIBER RECEIVE
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_sub.receive_error_message();
     client_sub.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -615,20 +617,20 @@ void Integration_test::testWrongTotalLength()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client_sub;
     //SUBSCRIBER
     client_sub.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_sub.receive_info_message();
     client_sub.send_auth_message("aldo", "s3cr3t");
     client_sub.send_wrong_message(40,OP_PUBLISH,"wrong message");
     //SUBSCRIBER RECEIVE
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_sub.receive_error_message();
     client_sub.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -646,35 +648,35 @@ void Integration_test::testPublishBigMessage()
 #endif
  a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client_sub;
     Hpfeeds_client client_pub;
     //CREATING BIG DATA
     vector<u_char> datas;
     Random _r;
-    for(int i=0; i<(3*1024); i++){
+    for(int i=0; i<(3*1024); i++) {
         datas.insert(datas.end(), _r.nextChar());
     }
     string data(datas.begin(), datas.end());
     //SUBSCRIBER
     client_sub.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_sub.receive_info_message();
     client_sub.send_auth_message("aldo", "s3cr3t");
     client_sub.send_subscribe_message("aldo", "ch1");
     //PUBLISHER
     client_pub.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_pub.receive_info_message();
     client_pub.send_auth_message("filippo", "pwd");
     client_pub.send_publish_message("filippo", "ch1", data);
     client_pub.disconnect();
     //SUBSCRIBER RECEIVE
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_sub.receive_publish_message();
     client_sub.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
@@ -692,12 +694,12 @@ void Integration_test::testPublishConcurrency()
 #endif
     a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     pthread_t broker_thread = startBroker(a);
-    sleep(BROKER_SETUP_WAIT); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     Hpfeeds_client client_sub;
     Hpfeeds_client client_pub;
     //SUBSCRIBER
     client_sub.connect();
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_sub.receive_info_message();
     client_sub.send_auth_message("aldo", "s3cr3t");
     client_sub.send_subscribe_message("aldo", "ch1");
@@ -728,30 +730,30 @@ void Integration_test::testPublishConcurrency()
     pthread_t pub_3;
 
     int res1 = pthread_create(&pub_1, NULL, run_publisher, &pub_data_1);
-    if (res1){
+    if (res1) {
         cout<<"Error during "<<pub_data_1[0]<<" creation: "<<res1<<endl;
     }
 
     int res2 = pthread_create(&pub_2, NULL, run_publisher, &pub_data_2);
-    if (res2){
+    if (res2) {
         cout<<"Error during "<<pub_data_2[0]<<" creation: "<<res2<<endl;
     }
 
     int res3 = pthread_create(&pub_3, NULL, run_publisher, &pub_data_3);
-    if (res3){
+    if (res3) {
         cout<<"Error during "<<pub_data_3[0]<<" creation: "<<res3<<endl;
     }
     //SUBSCRIBER RECEIVE
     pthread_join(pub_1, NULL);
     pthread_join(pub_2, NULL);
     pthread_join(pub_3, NULL);
-    sleep(1);
+    sleep(BROKER_GENERIC_WAIT);
     client_sub.receive_publish_message();
     client_sub.receive_publish_message();
     client_sub.receive_publish_message();
     client_sub.disconnect();
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 
 }
@@ -775,19 +777,20 @@ void Integration_test::testWithMongo()
     a->insert(a->end(),"--mongocoll");
     a->insert(a->end(),"auth_key");
     pthread_t broker_thread = startBroker(a);
-    sleep(2); //Wait for Broker setup
+    sleep(BROKER_SETUP_WAIT);
     stopBroker(broker_thread);
-    sleep(1);
+    sleep(BROKER_DELETE_WAIT);
     delete a;
 }
 
-pthread_t Integration_test::startBroker(Arguments* args){
+pthread_t Integration_test::startBroker(Arguments* args)
+{
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     pthread_t t1;
     int res = pthread_create(&t1, &attr, run, (void*)args);
-    if (res){
+    if(res) {
         pthread_attr_destroy(&attr);
         cout<<"Error during broker_thread creation: "<<res<<endl;
     }
@@ -795,7 +798,8 @@ pthread_t Integration_test::startBroker(Arguments* args){
     return t1;
 }
 
-void Integration_test::stopBroker(pthread_t t){
+void Integration_test::stopBroker(pthread_t t)
+{
 #ifdef DEBUG
     cout<<"Killing broker_thread..."<<endl;
 #endif
@@ -812,6 +816,7 @@ Test *Integration_test::suite()
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testServerParams",
                     &Integration_test::testServerParams));
+
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testDebugSettings",
                     &Integration_test::testDebugSettings));

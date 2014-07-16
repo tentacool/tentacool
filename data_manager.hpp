@@ -25,7 +25,7 @@ using namespace Poco;
 //! DataManager manage the data reading from a file or a MongoDB collection
 class DataManager
 {
-    typedef struct{
+    typedef struct {
         string secret;              //! User secret
         set<string> _publish_chs;   //! Publish channels associated to the user
         set<string> _subscribe_chs; //! Subscribe channels associated to the user
@@ -36,7 +36,8 @@ class DataManager
 public:
     //DataManager(); //! Dummy constructor
     DataManager(string filename);
-    DataManager(const string mongo_ip, const string mongodb_port,const string mongo_db, const string mongo_collection);
+    DataManager(const string mongo_ip, const string mongodb_port,
+                  const string mongo_db, const string mongo_collection);
     virtual ~DataManager();
     const string getSecretbyName(const string name);
     bool may_publish (const string name, const string channel) const ;
