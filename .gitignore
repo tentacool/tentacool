@@ -40,10 +40,13 @@ config.log
 config.status
 configure
 depcomp
-tentacool.log.*
 install-sh
 missing
 stamp-h1
+
+#logs 
+tentacool.log
+tentacool.log.*
 
 #exe
 tentacool
