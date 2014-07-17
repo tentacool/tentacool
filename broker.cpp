@@ -53,7 +53,7 @@ Net::TCPServerConnection* TCPConnectionFactory::createConnection(const
 BrokerApplication::BrokerApplication() :
         m_helpRequested(false), _debug_mode(false)
         , logger(Logger::get("HF_Broker"))
-        , port(10000), num_threads(10), queuelen(64), idletime(100)
+        , port(10000), num_threads(10), queuelen(46), idletime(100)
         , _data_mode(false), _stdout_logging(false), _filename_spec(false)
         , _exe_path("./"), _log_file("tentacool.log")
         ,_filename("auth_keys.dat"), _mongo_ip("127.0.0.1")
@@ -61,7 +61,9 @@ BrokerApplication::BrokerApplication() :
         , _mongo_collection("auth_key"), _data_manager(NULL)
 {
     //Default broker name
-    BrokerConnection::Broker_name="@hp1";
+    BrokerConnection::Broker_name = "@hp1";
+    //Broker is not stopped at begin
+    BrokerConnection::isStopped = false;
     //Set default priority of the logger messages
     logger.setLevel(Message::PRIO_INFORMATION);
 }
@@ -161,7 +163,7 @@ void BrokerApplication::defineOptions(Poco::Util::OptionSet& options)
                 "terminated. The default value is 100")
         .required(false)
         .argument("<Idle time>")
-        .validator(new Util::IntValidator(10, 200))
+        .validator(new Util::IntValidator(1, 200))
         .callback(Poco::Util::OptionCallback<BrokerApplication>
                     (this, &BrokerApplication::handleServerParams)));
 
@@ -313,7 +315,7 @@ int BrokerApplication::main(const std::vector<std::string>& args)
         //Setting Logger
         AutoPtr<SimpleFileChannel> sfChannel(new SimpleFileChannel);
         sfChannel->setProperty("path", _log_file);
-        sfChannel->setProperty("rotation", "10 K"); //Overwrite file at 10KB
+        sfChannel->setProperty("rotation", "2 K"); //Overwrite file at 2KB
         AutoPtr<PatternFormatter> sfPF(new PatternFormatter);
         sfPF->setProperty("pattern","[Th. %I] %Y-%m-%d %H:%M:%S [%p] %s: %t");
         sfPF->setProperty("times", "local");
@@ -385,6 +387,8 @@ int BrokerApplication::main(const std::vector<std::string>& args)
         waitForTerminationRequest();
 
         server.stop();
+
+        BrokerConnection::isStopped = true;
 
         //free data_manager
         delete _data_manager;

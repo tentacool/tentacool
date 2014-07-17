@@ -12,11 +12,13 @@ Compilation
 
 To compile the project, follow the next instructions:
 
+	autoreconf -i
     ./configure --with-poco=POCO_DIR
     make
 
 The mongoDB feature is optional, in order to obtain it use the follow istructions:
 
+	autoreconf -i
     ./configure --with-poco=POCO_DIR --with-mongodb=MONGODB_CLIENT_DIR
     make
 

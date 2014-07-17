@@ -53,6 +53,7 @@ public:
     void run();     //!< Client management main routine
     inline std::string ip();    //!< The ip of the peer
     static string Broker_name;  //!< Hpfeeds Broker server name
+    static bool isStopped;      //!< Stopping request
 private:
     //! The message router
     static MessageRouter _router;

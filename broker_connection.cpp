@@ -1,3 +1,4 @@
+#include "broker_connection.hpp"
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
@@ -5,7 +6,6 @@
 #include <Poco/NumberParser.h>
 #include <Poco/Net/NetException.h>
 #include <Poco/NumberFormatter.h>
-#include "broker_connection.hpp"
 #include "data_manager.hpp"
 #include "hpfeeds.hpp"
 
@@ -13,6 +13,7 @@ using namespace std;
 using namespace Poco;
 
 string BrokerConnection::Broker_name = "@hp1";
+bool BrokerConnection::isStopped = false;
 
 MessageRouter BrokerConnection::_router;
 
@@ -42,6 +43,7 @@ void BrokerConnection::run()
     Poco::Timespan timeOut(10, 0); //sec, usec
     int nbytes;
     uint32_t how_much_read; //total_lenght+opcode+name_lenght+channel_lenght
+    bool socket_status;
 
     // Start the authentication phase
     hpf_msg msg= hpf_info(_auth.genNonce(), Broker_name);
@@ -49,11 +51,20 @@ void BrokerConnection::run()
     _sock.sendBytes(msg.data(), msg.size());
     _state = S_AUTHENTICATION_PROCEEDING;
 
-    while (isOpen) {
+    while (isOpen && !isStopped) {
         _inBuffer.clear();
-        //_inBuffer.resize(INITIAL_CHUNK);
+        
+        //Determines the status of the socket, using a call to select().
+        //Returns true if the next operation corresponding to mode will not block.
+        try{
+            socket_status = _sock.poll(timeOut,Poco::Net::Socket::SELECT_READ);
+        } catch(Poco::Exception& exc) {
+            _logger.error("Poll error: "+exc.displayText());
+            isOpen = false;
+            break;
+        }
 
-        if (!_sock.poll(timeOut,Poco::Net::Socket::SELECT_READ) == false) {
+        if (socket_status) {
             nbytes = -1;
 
         try {
