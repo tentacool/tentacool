@@ -37,6 +37,7 @@ protected:
     void displayHelp();
     int main(const vector<string>& args);
 private:
+    string debugTag;
     bool m_helpRequested, _debug_mode;
     Logger& logger;
     unsigned short port;

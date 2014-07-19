@@ -51,9 +51,9 @@ Net::TCPServerConnection* TCPConnectionFactory::createConnection(const
 }
 
 BrokerApplication::BrokerApplication() :
-        m_helpRequested(false), _debug_mode(false)
+        debugTag(""), m_helpRequested(false), _debug_mode(false)
         , logger(Logger::get("HF_Broker"))
-        , port(10000), num_threads(10), queuelen(46), idletime(100)
+        , port(10000), num_threads(20), queuelen(46), idletime(100)
         , _data_mode(false), _stdout_logging(false), _filename_spec(false)
         , _exe_path("./"), _log_file("tentacool.log")
         ,_filename("auth_keys.dat"), _mongo_ip("127.0.0.1")
@@ -95,7 +95,65 @@ void BrokerApplication::initialize(Poco::Util::Application& self)
 {
     //! Load configuration file, if present, and initialize the application
     loadConfiguration(); // load default configuration files, if present
-    Poco::Util::ServerApplication::initialize(self);
+        
+    if(m_helpRequested) {
+        displayHelp();
+    } else {
+    try{
+
+        //Get the path of the executable
+        char pBuf[PATH_MAX];
+
+        int path_len = getPath(pBuf);
+        if(path_len > 0) {
+            //logger.debug(pBuf);
+            _exe_path = string(pBuf, path_len);
+            if(!_filename_spec) _filename = _exe_path + _filename;
+            _log_file = _exe_path + _log_file;
+        }
+
+        //Setting Logger
+        AutoPtr<SimpleFileChannel> sfChannel(new SimpleFileChannel);
+        sfChannel->setProperty("path", _log_file);
+        sfChannel->setProperty("rotation", "2 K"); //Overwrite file at 2KB
+        AutoPtr<PatternFormatter> sfPF(new PatternFormatter);
+        sfPF->setProperty("pattern","[Th. %I] %Y-%m-%d %H:%M:%S [%p] %s: %t");
+        sfPF->setProperty("times", "local");
+
+        AutoPtr<FormattingChannel>
+                                 sfFC(new FormattingChannel(sfPF, sfChannel));
+        AutoPtr<ConsoleChannel> cc (new ConsoleChannel());
+
+        AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
+
+        pSplitter->addChannel(sfFC); //on file by default
+        if(_stdout_logging) pSplitter->addChannel(cc);
+
+        logger.setChannel(pSplitter);
+
+        //Set priority at least for INFO messages
+        if(_debug_mode) {
+            debugTag = "[DEBUG_LOGGING_MODE]";
+        } else {
+            logger.setLevel(Message::PRIO_INFORMATION);
+        }
+
+        //Create File manager
+
+            #ifdef __WITH_MONGO__
+                if(!_data_mode) _data_manager = new DataManager(_filename);
+                else _data_manager = new DataManager(_mongo_ip,_mongo_port,
+                                                  _mongo_db,_mongo_collection);
+            #else
+                _data_manager = new DataManager(_filename);
+            #endif
+    } catch(Poco::Exception& exc) {
+        logger.error(exc.displayText());
+        _data_manager = NULL;
+        return;
+    }   
+    }
+    Poco::Util::ServerApplication::initialize(self); 
 }
 
 void BrokerApplication::uninitialize()
@@ -305,60 +363,12 @@ void BrokerApplication::displayHelp()
 
 int BrokerApplication::main(const std::vector<std::string>& args)
 {
+    if(!m_helpRequested) {
     try{
     //! Main
-    if(m_helpRequested) {
-        displayHelp();
-    }else{
-        string debugTag("");
+        if(_data_manager == NULL)
+                return Poco::Util::Application::EXIT_IOERR;
 
-        //Setting Logger
-        AutoPtr<SimpleFileChannel> sfChannel(new SimpleFileChannel);
-        sfChannel->setProperty("path", _log_file);
-        sfChannel->setProperty("rotation", "2 K"); //Overwrite file at 2KB
-        AutoPtr<PatternFormatter> sfPF(new PatternFormatter);
-        sfPF->setProperty("pattern","[Th. %I] %Y-%m-%d %H:%M:%S [%p] %s: %t");
-        sfPF->setProperty("times", "local");
-
-        AutoPtr<FormattingChannel>
-                                 sfFC(new FormattingChannel(sfPF, sfChannel));
-        AutoPtr<ConsoleChannel> cc (new ConsoleChannel());
-
-        AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
-
-        pSplitter->addChannel(sfFC); //on file by default
-        if(_stdout_logging) pSplitter->addChannel(cc);
-
-        logger.setChannel(pSplitter);
-
-        //Set priority at least for INFO messages
-        if(_debug_mode) {
-            debugTag="[DEBUG_LOGGING_MODE]";
-        } else {
-            logger.setLevel(Message::PRIO_INFORMATION);
-        }
-
-        //Get the path of the executable
-        char pBuf[PATH_MAX];
-        int path_len = getPath(pBuf);
-        if(path_len > 0) {
-            //logger.debug(pBuf);
-            _exe_path = string(pBuf, path_len);
-            if(!_filename_spec) _filename = _exe_path + _filename;
-        }
-        //Create File manager
-        try{
-            #ifdef __WITH_MONGO__
-                if(!_data_mode) _data_manager = new DataManager(_filename);
-                else _data_manager = new DataManager(_mongo_ip,_mongo_port,
-                                                  _mongo_db,_mongo_collection);
-            #else
-                _data_manager = new DataManager(_filename);
-            #endif
-        } catch(Poco::Exception& exc) {
-                logger.error(exc.displayText());
-                return Poco::Util::ServerApplication::EXIT_IOERR;
-        }
         logger.information("Tentacool started "+debugTag);
 
         // Create a server socket in order to listen to the port
@@ -392,12 +402,12 @@ int BrokerApplication::main(const std::vector<std::string>& args)
 
         //free data_manager
         delete _data_manager;
-    }
+
     } catch(exception& e) {
         logger.information(e.what());
         return Poco::Util::Application::EXIT_IOERR;
     }
-
+    }
     return Poco::Util::Application::EXIT_OK;
 }
 
