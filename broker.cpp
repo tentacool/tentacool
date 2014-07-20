@@ -62,7 +62,7 @@ BrokerApplication::BrokerApplication() :
 {
     //Default broker name
     BrokerConnection::Broker_name = "@hp1";
-    //Broker is not stopped at begin
+    //Broker is not stopped at the begin
     BrokerConnection::isStopped = false;
     //Set default priority of the logger messages
     logger.setLevel(Message::PRIO_INFORMATION);
@@ -71,7 +71,6 @@ BrokerApplication::BrokerApplication() :
 BrokerApplication::~BrokerApplication()
 {   //! Destructor
     if(!m_helpRequested) logger.information("Tentacool shutting down");
-    //_brokerStarted = false;
 }
 
 int BrokerApplication::getPath(char* pBuf)
@@ -99,59 +98,57 @@ void BrokerApplication::initialize(Poco::Util::Application& self)
     if(m_helpRequested) {
         displayHelp();
     } else {
-    try{
+		try{
+			//Get the path of the executable
+			char pBuf[PATH_MAX];
 
-        //Get the path of the executable
-        char pBuf[PATH_MAX];
+			int path_len = getPath(pBuf);
+			if(path_len > 0) {
+				//logger.debug(pBuf);
+				_exe_path = string(pBuf, path_len);
+				if(!_filename_spec) _filename = _exe_path + _filename;
+				_log_file = _exe_path + _log_file;
+			}
 
-        int path_len = getPath(pBuf);
-        if(path_len > 0) {
-            //logger.debug(pBuf);
-            _exe_path = string(pBuf, path_len);
-            if(!_filename_spec) _filename = _exe_path + _filename;
-            _log_file = _exe_path + _log_file;
-        }
+			//Setting Logger
+			AutoPtr<SimpleFileChannel> sfChannel(new SimpleFileChannel);
+			sfChannel->setProperty("path", _log_file);
+			sfChannel->setProperty("rotation", "2 K"); //Overwrite file at 2KB
+			AutoPtr<PatternFormatter> sfPF(new PatternFormatter);
+			sfPF->setProperty("pattern","[Th. %I] %Y-%m-%d %H:%M:%S [%p] %s: %t");
+			sfPF->setProperty("times", "local");
 
-        //Setting Logger
-        AutoPtr<SimpleFileChannel> sfChannel(new SimpleFileChannel);
-        sfChannel->setProperty("path", _log_file);
-        sfChannel->setProperty("rotation", "2 K"); //Overwrite file at 2KB
-        AutoPtr<PatternFormatter> sfPF(new PatternFormatter);
-        sfPF->setProperty("pattern","[Th. %I] %Y-%m-%d %H:%M:%S [%p] %s: %t");
-        sfPF->setProperty("times", "local");
+			AutoPtr<FormattingChannel>
+									 sfFC(new FormattingChannel(sfPF, sfChannel));
+			AutoPtr<ConsoleChannel> cc (new ConsoleChannel());
 
-        AutoPtr<FormattingChannel>
-                                 sfFC(new FormattingChannel(sfPF, sfChannel));
-        AutoPtr<ConsoleChannel> cc (new ConsoleChannel());
+			AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
 
-        AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
+			pSplitter->addChannel(sfFC); //on file by default
+			if(_stdout_logging) pSplitter->addChannel(cc);
 
-        pSplitter->addChannel(sfFC); //on file by default
-        if(_stdout_logging) pSplitter->addChannel(cc);
+			logger.setChannel(pSplitter);
 
-        logger.setChannel(pSplitter);
+			//Set priority at least for INFO messages
+			if(_debug_mode) {
+				debugTag = "[DEBUG_LOGGING_MODE]";
+			} else {
+				logger.setLevel(Message::PRIO_INFORMATION);
+			}
 
-        //Set priority at least for INFO messages
-        if(_debug_mode) {
-            debugTag = "[DEBUG_LOGGING_MODE]";
-        } else {
-            logger.setLevel(Message::PRIO_INFORMATION);
-        }
-
-        //Create File manager
-
-            #ifdef __WITH_MONGO__
-                if(!_data_mode) _data_manager = new DataManager(_filename);
-                else _data_manager = new DataManager(_mongo_ip,_mongo_port,
-                                                  _mongo_db,_mongo_collection);
-            #else
-                _data_manager = new DataManager(_filename);
-            #endif
-    } catch(Poco::Exception& exc) {
-        logger.error(exc.displayText());
-        _data_manager = NULL;
-        return;
-    }   
+			//Create File manager
+			#ifdef __WITH_MONGO__
+		    if(!_data_mode) _data_manager = new DataManager(_filename);
+			else _data_manager = new DataManager(_mongo_ip,_mongo_port,
+												 _mongo_db,_mongo_collection);
+			#else
+				_data_manager = new DataManager(_filename);
+			#endif
+		} catch(Poco::Exception& exc) {
+			logger.error(exc.displayText());
+			_data_manager = NULL;
+			return;
+		}   
     }
     Poco::Util::ServerApplication::initialize(self); 
 }
@@ -364,49 +361,48 @@ void BrokerApplication::displayHelp()
 int BrokerApplication::main(const std::vector<std::string>& args)
 {
     if(!m_helpRequested) {
-    try{
-    //! Main
-        if(_data_manager == NULL)
-                return Poco::Util::Application::EXIT_IOERR;
+		try{
+			//! Main
+			if(_data_manager == NULL)
+					return Poco::Util::Application::EXIT_IOERR;
 
-        logger.information("Tentacool started "+debugTag);
+			logger.information("Tentacool started "+debugTag);
 
-        // Create a server socket in order to listen to the port
-        Net::ServerSocket svs(port);
-        logger.information("Tentacool server socket in listening.");
-        // Configure some server parameters.
-        Net::TCPServerParams* pParams = new Net::TCPServerParams();
-        logger.information("Setting max threads number: " +
-                                    NumberFormatter::format(num_threads));
-        pParams->setMaxThreads(num_threads);
-        //logger.information("Setting queue length: " +
-        //                            NumberFormatter::format(queuelen));
-        pParams->setMaxQueued(queuelen);
-        logger.information("Setting idle time: " +
-                                    NumberFormatter::format(idletime));
-        pParams->setThreadIdleTime(idletime);
+			// Create a server socket in order to listen to the port
+			Net::ServerSocket svs(port);
+			logger.information("Tentacool server socket in listening.");
+			// Configure some server parameters.
+			Net::TCPServerParams* pParams = new Net::TCPServerParams();
+			logger.information("Setting max threads number: " +
+										NumberFormatter::format(num_threads));
+			pParams->setMaxThreads(num_threads);
+			//logger.information("Setting queue length: " +
+			//                            NumberFormatter::format(queuelen));
+			pParams->setMaxQueued(queuelen);
+			logger.information("Setting idle time: " +
+										NumberFormatter::format(idletime));
+			pParams->setThreadIdleTime(idletime);
 
-        Net::TCPServer server(
-                     new TCPConnectionFactory(_data_manager),svs, pParams);
-        server.start();
-        //TCPServer uses a separate thread to accept incoming connections.
-        // Thus, the call to start() returns immediately, and the server
-        // continues to run in the background.
+			Net::TCPServer server(
+						new TCPConnectionFactory(_data_manager),svs, pParams);
+			server.start();
+			//TCPServer uses a separate thread to accept incoming connections.
+			// Thus, the call to start() returns immediately, and the server
+			// continues to run in the background.
 
-        // wait for CTRL-C or kill
-        waitForTerminationRequest();
+			// wait for CTRL-C or kill
+			waitForTerminationRequest();
 
-        server.stop();
+			server.stop();
 
-        BrokerConnection::isStopped = true;
+			BrokerConnection::isStopped = true;
 
-        //free data_manager
-        delete _data_manager;
-
-    } catch(exception& e) {
-        logger.information(e.what());
-        return Poco::Util::Application::EXIT_IOERR;
-    }
+			//free data_manager
+			delete _data_manager;
+		} catch(exception& e) {
+			logger.information(e.what());
+			return Poco::Util::Application::EXIT_IOERR;
+		}
     }
     return Poco::Util::Application::EXIT_OK;
 }
