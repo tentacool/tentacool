@@ -12,7 +12,7 @@
 
 typedef std::string HPChannel;
 typedef Poco::Net::StreamSocket* StreamSocketPtr;
-typedef SafeSet<StreamSocketPtr> StreamSocketPtrSet;   //Here I'm using my own thread_safe set
+typedef SafeSet<StreamSocketPtr> StreamSocketPtrSet;
 typedef std::map<HPChannel, StreamSocketPtrSet> ChannelMap;
 
 //! MessageRouter manage the spread of a publish to the subscribers

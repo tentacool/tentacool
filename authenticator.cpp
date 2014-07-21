@@ -10,7 +10,7 @@ Authenticator::Authenticator(int seed): _nonce(0)
 {
     if (seed > 0) {
         _prng.seed(seed);
-    }else{
+    } else {
         _prng.seed();
     }
     this->genNonce();

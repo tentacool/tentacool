@@ -32,8 +32,7 @@ protected:
     void handleOption(const string& name, const string& value);
     void handleMode(const string& name, const string& value);
     void handlePort(const string& name, const string& value);
-    void handleServerParams(const std::string& name,
-                                                    const std::string& value);
+    void handleServerParams(const std::string& name, const std::string& value);
     void displayHelp();
     int main(const vector<string>& args);
 private:

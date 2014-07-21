@@ -36,7 +36,7 @@ hpf_msg hpf_auth(uint32_t nonce, string ident, string secret)
 {
     hpf_msg msg = hpf_new();
     msg.at(msg.size() - 1) = OP_AUTH;
-    //Preparing the hash
+    // Preparing the hash
     Poco::SHA1Engine sha1;
     Poco::DigestEngine::Digest hash_d;
     sha1.update(reinterpret_cast<u_char*>(&nonce), 4);
@@ -44,10 +44,8 @@ hpf_msg hpf_auth(uint32_t nonce, string ident, string secret)
     hash_d = sha1.digest();
     string hash(hash_d.begin(),hash_d.end());
 
-    hpf_add_chunk(msg, reinterpret_cast<const u_char*>(ident.data()),
-                                                                ident.length());
-    hpf_add_payload(msg, reinterpret_cast<const u_char*>(hash.data()),
-                                                                 hash.length());
+    hpf_add_chunk(msg, reinterpret_cast<const u_char*>(ident.data()), ident.length());
+    hpf_add_payload(msg, reinterpret_cast<const u_char*>(hash.data()), hash.length());
     return msg;
 }
 
@@ -55,24 +53,19 @@ hpf_msg hpf_subscribe(string ident, string channel)
 {
     hpf_msg msg = hpf_new();
     msg.at(msg.size() - 1) = OP_SUBSCRIBE;
-    hpf_add_chunk(msg, reinterpret_cast<const u_char*>(ident.data()),
-                                                                ident.length());
-    hpf_add_payload(msg, reinterpret_cast<const u_char*>(channel.data()),
-                                                              channel.length());
+    hpf_add_chunk(msg, reinterpret_cast<const u_char*>(ident.data()), ident.length());
+    hpf_add_payload(msg, reinterpret_cast<const u_char*>(channel.data()), channel.length());
     return msg;
 }
 
-hpf_msg hpf_publish(string ident, string channel, u_char *data,
-                                                    uint32_t data_len)
+hpf_msg hpf_publish(string ident, string channel, u_char *data, uint32_t data_len)
 {
-    if(data == NULL || data_len == 0)
+    if (data == NULL || data_len == 0)
         throw Poco::Exception("Publish: Invalid Input");
     hpf_msg msg = hpf_new();
     msg.at(msg.size() - 1) = OP_PUBLISH;
-    hpf_add_chunk(msg, reinterpret_cast<const u_char*>(ident.data()),
-                                                                ident.length());
-    hpf_add_chunk(msg, reinterpret_cast<const u_char*>(channel.data()),
-                                                              channel.length());
+    hpf_add_chunk(msg, reinterpret_cast<const u_char*>(ident.data()), ident.length());
+    hpf_add_chunk(msg, reinterpret_cast<const u_char*>(channel.data()), channel.length());
     hpf_add_payload(msg, data, data_len);
     return msg;
 }
@@ -90,9 +83,9 @@ void hpf_add_chunk(hpf_msg& m, const u_char *data, uint32_t len)
     new_size[2] = (ns & 0x0000ff00) >> 8;
     new_size[1] = (ns & 0x00ff0000) >> 16;
     new_size[0] = (ns & 0xff000000) >> 24;
-    m.at(old_size) = chunk_length; //set chunk length
-    copy(data, data + len, m.end() - len);  //copy chunk
-    copy(new_size, new_size + sizeof(uint32_t), m.begin());  //set length
+    m.at(old_size) = chunk_length; // set chunk length
+    copy(data, data + len, m.end() - len);  // copy chunk
+    copy(new_size, new_size + sizeof(uint32_t), m.begin());  // set length
 }
 
 void hpf_add_payload(hpf_msg &m, const u_char *data, uint32_t len)
@@ -105,8 +98,8 @@ void hpf_add_payload(hpf_msg &m, const u_char *data, uint32_t len)
     new_size[2] = (ns & 0x0000ff00) >> 8;
     new_size[1] = (ns & 0x00ff0000) >> 16;
     new_size[0] = (ns & 0xff000000) >> 24;
-    copy(data, data + len, m.end() - len); //copy payload
-    copy(new_size, new_size + sizeof(uint32_t), m.begin()); //set length
+    copy(data, data + len, m.end() - len); // copy payload
+    copy(new_size, new_size + sizeof(uint32_t), m.begin()); // set length
 }
 
 uint32_t hpf_getsize(hpf_msg& m)

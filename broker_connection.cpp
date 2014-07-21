@@ -17,8 +17,7 @@ bool BrokerConnection::isStopped = false;
 
 MessageRouter BrokerConnection::_router;
 
-BrokerConnection::BrokerConnection(const Net::StreamSocket& s,
-                                        DataManager* data_manager) :
+BrokerConnection::BrokerConnection(const Net::StreamSocket& s, DataManager* data_manager) :
     Net::TCPServerConnection(s),
     _sock(this->socket()),
     _logger(Poco::Logger::get("HF_Broker")),
@@ -53,10 +52,10 @@ void BrokerConnection::run()
 
     while (isOpen && !isStopped) {
         _inBuffer.clear();
-        
-        //Determines the status of the socket, using a call to select().
-        //Returns true if the next operation corresponding to mode will not block.
-        try{
+
+        // Determines the status of the socket, using a call to select().
+        // Returns true if the next operation corresponding to mode will not block.
+        try {
             socket_status = _sock.poll(timeOut,Poco::Net::Socket::SELECT_READ);
         } catch(Poco::Exception& exc) {
             _logger.error("Poll error: "+exc.displayText());
@@ -67,65 +66,59 @@ void BrokerConnection::run()
         if (socket_status) {
             nbytes = -1;
 
-        try {
-            // Receiving bytes from client
-            // Because the two messages from client are sent in a single stream
-            // I've to distinguish here the auth message from the publish or subscribe
-            nbytes = _sock.receiveBytes(&_inBuffer[0], sizeof(uint32_t));
-            if (nbytes <= 0) {
-                _logger.debug("Connection closed by peer");
-                isOpen = false;
-                break;
-            }
-            //This is the total length, so it must be < MAXBUF - HEADER = DATA
-            memcpy(&total_length,&_inBuffer[0], sizeof(uint32_t));
-            //cout<<"BYTE: "+NumberFormatter::format(nbytes) + ", "
-            //   "TL:" + NumberFormatter::format(ntohl(total_length))<<endl;
-            if (ntohl(total_length) > MAXBUF) {
-                //Prevent Buffer Overflow
-                sendErrorMsg("Oversized Message -> Bad client", false);
-                isOpen = false;
-                break;
-            }
-            //Get the Opcode
-            nbytes = _sock.receiveBytes(&_inBuffer[0] + sizeof(uint32_t),
+            try {
+                // Receiving bytes from client
+                // Because the two messages from client are sent in a single stream
+                // I've to distinguish here the auth message from the publish or subscribe
+                nbytes = _sock.receiveBytes(&_inBuffer[0], sizeof(uint32_t));
+                if (nbytes <= 0) {
+                    _logger.debug("Connection closed by peer");
+                    isOpen = false;
+                    break;
+                }
+                // This is the total length, so it must be < MAXBUF - HEADER = DATA
+                memcpy(&total_length,&_inBuffer[0], sizeof(uint32_t));
+                if (ntohl(total_length) > MAXBUF) {
+                    // Prevent Buffer Overflow
+                    sendErrorMsg("Oversized Message -> Bad client", false);
+                    isOpen = false;
+                    break;
+                }
+                // Get the Opcode
+                nbytes = _sock.receiveBytes(&_inBuffer[0] + sizeof(uint32_t),
                                                           sizeof(uint8_t));
-            if (nbytes <= 0) {
-                _logger.debug("Connection closed by peer");
+                if (nbytes <= 0) {
+                    _logger.debug("Connection closed by peer");
+                    isOpen = false;
+                    break;
+                }
+                // This is the total length, so it must be < MAXBUF - HEADER = DATA
+                memcpy(&op_code, &_inBuffer[0] + sizeof(uint32_t), sizeof(uint8_t));
+                // Check total length
+                if (op_code > OP_UNSUBSCRIBE) {
+                    //Wrong OpCode
+                    sendErrorMsg("Wrong Opcode -> Bad client", true);
+                    isOpen = false;
+                    break;
+                }
+                if (ntohl(total_length) > _inBuffer.capacity()) {
+                    //We have to resize the buffer
+                    _inBuffer.resize(ntohl(total_length));
+                    _logger.debug("Buffer resized to " +
+                            NumberFormatter::format(ntohl(total_length)));
+                }
+                // Receive the rest of the message
+                nbytes = _sock.receiveBytes(_inBuffer.data() +
+                    sizeof(uint32_t) + sizeof(uint8_t),
+                    ntohl(total_length) - sizeof(uint32_t) - sizeof(uint8_t));
+            } catch (Poco::Exception& exc) {
+                // Handle your network errors.
+                _logger.error("Network error: "+exc.displayText());
                 isOpen = false;
                 break;
             }
-            //This is the total length, so it must be < MAXBUF - HEADER = DATA
-            memcpy(&op_code, &_inBuffer[0] + sizeof(uint32_t),
-                                              sizeof(uint8_t));
-            //cout<<"BYTE: "+NumberFormatter::format(nbytes)+","
-            //        " OP:"+NumberFormatter::format(op_code)<<endl;
-            //Check total length
-            if (op_code > OP_UNSUBSCRIBE) {
-                //Wrong OpCode
-                sendErrorMsg("Wrong Opcode -> Bad client", true);
-                isOpen = false;
-                break;
-            }
-            if (ntohl(total_length) > _inBuffer.capacity()) {
-                //We have to resize the buffer
-                _inBuffer.resize(ntohl(total_length));
-                _logger.debug("Buffer resized to " +
-                        NumberFormatter::format(ntohl(total_length)));
-            }
-            //Receive the rest of the message
-            nbytes = _sock.receiveBytes(_inBuffer.data() +
-                sizeof(uint32_t) + sizeof(uint8_t),
-                ntohl(total_length) - sizeof(uint32_t) - sizeof(uint8_t));
-        } catch (Poco::Exception& exc) {
-            // Handle your network errors.
-            _logger.error("Network error: "+exc.displayText());
-            isOpen = false;
-            break;
-        }
 
-        //cout << "LEGGO DATI, state: " << _state << endl;
-        switch (_state) {
+            switch (_state) {
             case S_AUTHENTICATION_PROCEEDING:
                 this->authUser();
                 if (_state != S_AUTHENTICATED) {
@@ -134,45 +127,37 @@ void BrokerConnection::run()
                 break;
             case S_SUBSCRIBED: //Subscribed is also authenticated
             case S_AUTHENTICATED:
-                //cout << "OPCODE " << (int) op_code << endl;
                 if (ntohl(total_length) > message_sizes[int(op_code)]) {
-                    //If the message is too long for its type
-                    //cout<<"CHECK LONG: "+NumberFormatter::format(ntohl(total_length))<<endl;
+                    // If the message is too long for its type
                     sendErrorMsg("Oversized Message -> Bad client", true); //??
                     isOpen = false;
                     return;
                 }
                 switch (int(op_code)) {
-                    case OP_SUBSCRIBE: {////////// SUBSCRIBE //////////
+                    case OP_SUBSCRIBE: {
                         how_much_read = 4+1+1;
                         _logger.debug("I've got a subscription...");
                         try{
-                            //TODO name and channel
-                            //Get the name
+                            // Get the name
                             string s_name(
                                     reinterpret_cast<char*>(&_inBuffer[5+1]),
                                     _inBuffer[5]);
-                            //cout<<s_name<<endl;
                             how_much_read += s_name.length();
                             if (how_much_read >= ntohl(total_length)) {
-                                sendErrorMsg("Invalid message -> Bad Client",
-                                                                       false);
+                                sendErrorMsg("Invalid message -> Bad Client", false);
                                 how_much_read = 0;
                                 break;
                             }
-                            //Get the channelname
+                            // Get the channelname
                             string s_channel(
                                 reinterpret_cast<char*>(
                                     &_inBuffer[HEADER + 1] + s_name.length()),
-                                    ntohl(total_length) - HEADER - 1
-                                    - s_name.length());
-                            //cout<<s_channel<<endl;
+                                    ntohl(total_length) - HEADER - 1 - s_name.length());
 
-                            if (!_data_manager->may_subscribe(s_name,
-                                                              s_channel)) {
-                                //The client can't subscribe to the channel
-                                 _logger.information(s_name+
-                                         " cannot subscribe to "+s_channel);
+                            if (!_data_manager->may_subscribe(s_name, s_channel)) {
+                                 // The client can't subscribe to the channel
+                                 _logger.information(s_name +
+                                         " cannot subscribe to " + s_channel);
                                  sendErrorMsg("accessfail", true);
                                  how_much_read = 0;
                                  break;
@@ -180,25 +165,24 @@ void BrokerConnection::run()
                                  // I have also to unsubscribe the user
                                  // to the other
                             }
-                            _router.subscribe(s_channel,&_sock);
+                            _router.subscribe(s_channel, &_sock);
                             _state = S_SUBSCRIBED;
                             how_much_read = 0;
                         } catch (Poco::Exception& e) {
-                            _logger.error("!!!"+e.displayText());
+                            _logger.error("!!!" + e.displayText());
                             how_much_read = 0;
                         }
                         break;
                     }
-                    case OP_PUBLISH: { ////////// PUBLISH //////////
-                        how_much_read = 5+1+1;
+                    case OP_PUBLISH: {
+                        how_much_read = 5 + 1 + 1;
                         _logger.debug("I've got a publish...");
                         //hpf_msg_t *pub_msg = NULL;// TODO
-                        try{
-                            //Get the name
+                        try {
+                            // Get the name
                             string s_name(
                                     reinterpret_cast<char*>(&_inBuffer[5+1]),
                                     _inBuffer[5]);
-                            //cout<<s_name<<endl;
                             how_much_read += s_name.length();
                             if(how_much_read >= ntohl(total_length)) {
                                 sendErrorMsg("Invalid message -> Bad Client",
@@ -206,37 +190,36 @@ void BrokerConnection::run()
                                 how_much_read = 0;
                                 break;
                             }
-                            //Get the channelname
+                            // Get the channelname
                             string s_channel(
                                reinterpret_cast<char*>(
                                    &_inBuffer[HEADER + 1] + 1
                                    + s_name.length()),
                                    _inBuffer[HEADER + 1 + s_name.length()]);
-                            //cout<<s_channel<<endl;
+
                             how_much_read += s_channel.length();
-                            if(how_much_read >= ntohl(total_length)) {
-                               sendErrorMsg("Invalid message -> Bad Client",
-                                                                      false);
+                            if (how_much_read >= ntohl(total_length)) {
+                               sendErrorMsg("Invalid message -> Bad Client", false);
                                how_much_read = 0;
                                break;
                             }
 
-                            if(!_data_manager->may_publish(s_name,s_channel)) {
-                                //The client can't publish to the specified channel
+                            if (!_data_manager->may_publish(s_name,s_channel)) {
+                                // The client can't publish to the specified channel
                                 _logger.information(s_name +
                                             " cannot publish to "+s_channel);
                                 sendErrorMsg("accessfail", true);
                                 how_much_read = 0;
                                 break;
                             }
-                            //Get the payload
+                            // Get the payload
                             u_char* payload = reinterpret_cast<u_char*>(
                                     &_inBuffer[HEADER + 1] + s_name.length() +
                                     1 + s_channel.length());
                             int payload_lenght = ntohl(total_length) - HEADER
                                           - 1 - s_name.length()
                                           - 1 - s_channel.length();
-                            //Create the hpfeeds message that we'll send to
+                            // Create the hpfeeds message that we'll send to
                             // the subscribed clients
                             hpf_msg pub_msg = hpf_publish(s_name, s_channel,
                                                       payload, payload_lenght);
@@ -257,35 +240,35 @@ void BrokerConnection::run()
                 }
                 break;
                 case S_ERROR:
-                    _logger.error("There was an error, "
-                             "the communication will shut down");
+                    _logger.error("There was an error, the communication will shut down");
                      isOpen = false;
                      break;
                 default:
-                     _logger.error("Unhandled state: "+ _state);
+                     _logger.error("Unhandled state: " + _state);
                      break;
             }
-        } //It's the _sock.poll(...) closing parenthesis
+        }
     }
 }
 
 void BrokerConnection::sendErrorMsg(string msg, bool sendToClient)
 {
     _logger.error(msg);
-    if(sendToClient) {
+    if (sendToClient) {
         hpf_msg m = hpf_error(msg);
         _logger.debug("Sending ERROR message to the client...");
         _sock.sendBytes(m.data(), m.size());
     }
     // If it's subscribed to a channel i have to unsubscribe, so i do not
     // modify its state
-    if(_state != S_SUBSCRIBED) _state = S_ERROR;
+    if (_state != S_SUBSCRIBED)
+        _state = S_ERROR;
 }
 
 void BrokerConnection::authUser()
 {
     hpf_msg_t* msg = reinterpret_cast<hpf_msg_t *>(_inBuffer.data());
-    uint32_t how_much_read = 4+1+1; //total_lenght + opcode+ name length
+    uint32_t how_much_read = 4 + 1 + 1; //total_lenght + opcode+ name length
 
     if (msg->hdr.opcode != OP_AUTH) {
         _logger.error("Unexpected message: "+
@@ -293,12 +276,12 @@ void BrokerConnection::authUser()
         sendErrorMsg("accessfail", true);
         return;
     }
-    if(ntohl(msg->hdr.msglen) > message_sizes[int(msg->hdr.opcode)]) {
+    if (ntohl(msg->hdr.msglen) > message_sizes[int(msg->hdr.opcode)]) {
         //If the message is too long for its type
        sendErrorMsg("accessfail", true);
        return;
     }
-    //TODO AUTH
+
     string username((char*) &_inBuffer[5+1], _inBuffer[5]);
     how_much_read += username.length();
     if(how_much_read >= ntohl(msg->hdr.msglen)) {
@@ -334,6 +317,8 @@ void BrokerConnection::authUser()
 
 BrokerConnection::~BrokerConnection()
 {
-    if (_state == S_SUBSCRIBED) _router.unsubscribe(&_sock);
-    else _logger.information("Closed connection");
+    if (_state == S_SUBSCRIBED)
+        _router.unsubscribe(&_sock);
+    else
+        _logger.information("Closed connection");
 }

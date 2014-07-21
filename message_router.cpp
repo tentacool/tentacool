@@ -14,8 +14,8 @@ MessageRouter::MessageRouter() :
 
 void MessageRouter::subscribe(HPChannel channel, StreamSocketPtr client)
 {
-    _logger.information("Subscribe request on channel "+
-            channel+" for "+client->peerAddress().host().toString());
+    _logger.information("Subscribe request on channel " +
+            channel + " for " + client->peerAddress().host().toString());
 
     _map_mutex.r_lock();
     StreamSocketPtrSet& channelset = _channels[channel];
@@ -27,16 +27,14 @@ void MessageRouter::subscribe(HPChannel channel, StreamSocketPtr client)
         channelset.insert(client);
         _map_mutex.w_unlock();
     }
-    _logger.debug("Channel "+channel+" has "+
-            Poco::NumberFormatter::format(channelset.size())+" subscribers");
+    _logger.debug("Channel " + channel + " has " +
+            Poco::NumberFormatter::format(channelset.size()) + " subscribers");
 }
 
 void MessageRouter::unsubscribe(StreamSocketPtr client)
 {
     _map_mutex.w_lock();
-    for (ChannelMap::iterator it = _channels.begin(); it != _channels.end();
-            ++it)
-    {
+    for (ChannelMap::iterator it = _channels.begin(); it != _channels.end(); ++it) {
         //Looking for the client in the set of StreamSocketPtr
         StreamSocketPtrSet::iterator itr = (it->second).find(client);
         if (itr != (it->second).end()) { //Found it!
@@ -54,7 +52,7 @@ void MessageRouter::publish(HPChannel channel, StreamSocketPtr caller,
     StreamSocketPtrSet& channelset = _channels[channel];
 
     if (channelset.size() == 0) {
-        _logger.information("Channel "+channel+" not present");
+        _logger.information("Channel " + channel + " not present");
         _map_mutex.r_unlock();
         return;
     }
@@ -63,7 +61,7 @@ void MessageRouter::publish(HPChannel channel, StreamSocketPtr caller,
         for (itr = channelset.begin(); itr != channelset.end(); ++itr) {
             if (*itr != caller) {
                 (*itr)->sendBytes(message, len);
-                _logger.information("Published message from on "+channel);
+                _logger.information("Published message from on " + channel);
             }
         }
     } catch (Poco::Exception& e) {

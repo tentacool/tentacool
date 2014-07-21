@@ -9,19 +9,25 @@
 #include "authenticator.hpp"
 #include "data_manager.hpp"
 
-#define INITIAL_CHUNK 1024 //1KB
-#define HEADER 5 //5 is the common header for all messages (msg_lenght (4) + opcode (1))
-#define DATA 10*1024*1024 //10MB
+// 1KB
+#define INITIAL_CHUNK 1024
+
+//5 is the common header for all messages (msg_lenght (4) + opcode (1))
+#define HEADER 5
+
+//10MB
+#define DATA 10*1024*1024
+
 #define MAXBUF DATA + HEADER
 
 using namespace std;
 
 typedef enum {
-    OP_ERROR ,
-    OP_INFO ,
+    OP_ERROR,
+    OP_INFO,
     OP_AUTH,
-    OP_PUBLISH ,
-    OP_SUBSCRIBE ,
+    OP_PUBLISH,
+    OP_SUBSCRIBE,
     OP_UNSUBSCRIBE
 } OP_CODES;
 
@@ -50,10 +56,14 @@ public:
     BrokerConnection(const Poco::Net::StreamSocket& s, DataManager* data_manager);
     //! Destructor
     ~BrokerConnection();
-    void run();     //!< Client management main routine
-    inline std::string ip();    //!< The ip of the peer
-    static string Broker_name;  //!< Hpfeeds Broker server name
-    static bool isStopped;      //!< Stopping request
+    //! Client management main routine
+    void run();
+    //! The ip of the peer
+    inline std::string ip();
+    //! Hpfeeds Broker server name
+    static string Broker_name;
+    //! Stopping request
+    static bool isStopped;
 private:
     //! The message router
     static MessageRouter _router;
