@@ -43,6 +43,7 @@ depcomp
 install-sh
 missing
 stamp-h1
+docs/html
 
 #logs
 tentacool.log
