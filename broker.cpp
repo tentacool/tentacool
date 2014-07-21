@@ -39,47 +39,50 @@ using Poco::Channel;
 using Poco::PatternFormatter;
 
 //! TCPConnectionFactory create the TCP connections
-TCPConnectionFactory::TCPConnectionFactory(DataManager* data_m):
-                                                                _data_m(data_m)
-{}
+TCPConnectionFactory::TCPConnectionFactory(DataManager* data_m) : _data_m(data_m)
+{
+}
+
 TCPConnectionFactory::~TCPConnectionFactory()
-{}
-Net::TCPServerConnection* TCPConnectionFactory::createConnection(const
-                                                    Net::StreamSocket& socket)
+{
+}
+
+Net::TCPServerConnection* TCPConnectionFactory::createConnection(
+    const Net::StreamSocket& socket)
 {
     return new BrokerConnection(socket, _data_m);
 }
 
 BrokerApplication::BrokerApplication() :
-        debugTag(""), m_helpRequested(false), _debug_mode(false)
-        , logger(Logger::get("HF_Broker"))
-        , port(10000), num_threads(20), queuelen(46), idletime(100)
-        , _data_mode(false), _stdout_logging(false), _filename_spec(false)
-        , _exe_path("./"), _log_file("tentacool.log")
-        ,_filename("auth_keys.dat"), _mongo_ip("127.0.0.1")
-        , _mongo_port("27017"), _mongo_db("hpfeeds")
-        , _mongo_collection("auth_key"), _data_manager(NULL)
+        debugTag(""), m_helpRequested(false), _debug_mode(false),
+        logger(Logger::get("HF_Broker")), port(10000), num_threads(20),
+        queuelen(46), idletime(100), _data_mode(false), _stdout_logging(false),
+        _filename_spec(false), _exe_path("./"), _log_file("tentacool.log"),
+        _filename("auth_keys.dat"), _mongo_ip("127.0.0.1"), _mongo_port("27017"),
+        _mongo_db("hpfeeds"), _mongo_collection("auth_key"), _data_manager(NULL)
 {
-    //Default broker name
+    // Default broker name
     BrokerConnection::Broker_name = "@hp1";
-    //Broker is not stopped at the begin
+    // Broker is not stopped at the begin
     BrokerConnection::isStopped = false;
-    //Set default priority of the logger messages
+    // Set default priority of the logger messages
     logger.setLevel(Message::PRIO_INFORMATION);
 }
 
 BrokerApplication::~BrokerApplication()
-{   //! Destructor
-    if(!m_helpRequested) logger.information("Tentacool shutting down");
+{
+    if (!m_helpRequested)
+        logger.information("Tentacool shutting down");
 }
 
 int BrokerApplication::getPath(char* pBuf)
 {
     //! Retrieve the path of the Broker executable
+    // TODO C -> C++
     char szTmp[PATH_MAX];
     sprintf(szTmp, "/proc/self/exe");
     int bytes = readlink(szTmp, pBuf, PATH_MAX);
-    if(bytes >= 0) {
+    if (bytes >= 0) {
         pBuf[bytes] = '\0';
         string line(pBuf, bytes);
         line = line.substr(0, line.find_last_of("\\/"));
@@ -93,43 +96,44 @@ int BrokerApplication::getPath(char* pBuf)
 void BrokerApplication::initialize(Poco::Util::Application& self)
 {
     //! Load configuration file, if present, and initialize the application
-    loadConfiguration(); // load default configuration files, if present
-        
-    if(m_helpRequested) {
+    loadConfiguration();
+
+    if (m_helpRequested) {
         displayHelp();
     } else {
-        try{
-            //Get the path of the executable
+        try {
+            // Get the path of the executable
             char pBuf[PATH_MAX];
 
             int path_len = getPath(pBuf);
-            if(path_len > 0) {
-                //logger.debug(pBuf);
+            if (path_len > 0) {
                 _exe_path = string(pBuf, path_len);
-                if(!_filename_spec) _filename = _exe_path + _filename;
+                if (!_filename_spec)
+                    _filename = _exe_path + _filename;
                 _log_file = _exe_path + _log_file;
             }
 
-            //Setting Logger
+            // Setting Logger
             AutoPtr<SimpleFileChannel> sfChannel(new SimpleFileChannel);
             sfChannel->setProperty("path", _log_file);
-            sfChannel->setProperty("rotation", "2 K"); //Overwrite file at 2KB
+            // Overwrite file at 2KB
+            sfChannel->setProperty("rotation", "2 K");
             AutoPtr<PatternFormatter> sfPF(new PatternFormatter);
             sfPF->setProperty("pattern","[Th. %I] %Y-%m-%d %H:%M:%S [%p] %s: %t");
             sfPF->setProperty("times", "local");
 
-            AutoPtr<FormattingChannel>
-                                     sfFC(new FormattingChannel(sfPF, sfChannel));
-            AutoPtr<ConsoleChannel> cc (new ConsoleChannel());
+            AutoPtr<FormattingChannel> sfFC(new FormattingChannel(sfPF, sfChannel));
+            AutoPtr<ConsoleChannel> cc(new ConsoleChannel());
 
             AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
 
             pSplitter->addChannel(sfFC); //on file by default
-            if(_stdout_logging) pSplitter->addChannel(cc);
+            if (_stdout_logging)
+                pSplitter->addChannel(cc);
 
             logger.setChannel(pSplitter);
 
-            //Set priority at least for INFO messages
+            // Set priority at least for INFO messages
             if(_debug_mode) {
                 debugTag = "[DEBUG_LOGGING_MODE]";
             } else {
@@ -138,9 +142,11 @@ void BrokerApplication::initialize(Poco::Util::Application& self)
 
             //Create File manager
             #ifdef __WITH_MONGO__
-            if(!_data_mode) _data_manager = new DataManager(_filename);
-            else _data_manager = new DataManager(_mongo_ip,_mongo_port,
-                                                 _mongo_db,_mongo_collection);
+            if(!_data_mode)
+                _data_manager = new DataManager(_filename);
+            else
+                _data_manager = new DataManager(_mongo_ip,_mongo_port, _mongo_db,
+                    _mongo_collection);
             #else
                 _data_manager = new DataManager(_filename);
             #endif
@@ -148,47 +154,51 @@ void BrokerApplication::initialize(Poco::Util::Application& self)
             logger.error(exc.displayText());
             _data_manager = NULL;
             return;
-        }   
+        }
     }
-    Poco::Util::ServerApplication::initialize(self); 
+    Poco::Util::ServerApplication::initialize(self);
 }
 
 void BrokerApplication::uninitialize()
-{   //! Uninitialize the application
+{
+    //! Uninitialize the application
     Poco::Util::ServerApplication::uninitialize();
 }
 
 void BrokerApplication::defineOptions(Poco::Util::OptionSet& options)
 {
-    //! Define the application options
-    //\param options is a Poco::Util::OptionSet&.
+    // Define the application options
+    // options is a Poco::Util::OptionSet&.
     Poco::Util::ServerApplication::defineOptions(options);
 
     options.addOption(
-    Poco::Util::Option("help", "h",
-                      "display help information on command line arguments")
-        .required(false)
-        .repeatable(false));
-    options.addOption(
-    Poco::Util::Option("debug", "d",
-                                  "active the debug informations printing")
+    Poco::Util::Option("help", "h", "display help information on command line arguments")
         .required(false)
         .repeatable(false));
 
     options.addOption(
-    Poco::Util::Option("log_stdout", "v",
-                                       "write broker output on the stdout")
+    Poco::Util::Option("debug", "d", "active the debug informations printing")
         .required(false)
         .repeatable(false));
+
     options.addOption(
-    Poco::Util::Option("name", "n",
-                                "give a name to the broker (@hp1 default)")
+    Poco::Util::Option("version", "ver", "Show the version")
+        .required(false)
+        .repeatable(false));
+
+    options.addOption(
+    Poco::Util::Option("log_stdout", "v", "write broker output on the stdout")
+        .required(false)
+        .repeatable(false));
+
+    options.addOption(
+    Poco::Util::Option("name", "n", "give a name to the broker (@hp1 default)")
         .required(false)
         .argument("<name of the broker>")
         .repeatable(false));
+
     options.addOption(
-    Poco::Util::Option("port", "p",
-                            "define the port Tentacool will listen to")
+    Poco::Util::Option("port", "p", "define the port Tentacool will listen to")
         .required(false)
         .argument("<port number>")
         .validator(new Util::IntValidator(1024, 65535))
@@ -196,31 +206,28 @@ void BrokerApplication::defineOptions(Poco::Util::OptionSet& options)
                       (this, &BrokerApplication::handlePort)));
 
     options.addOption(
-     Poco::Util::Option("file", "f",
-                            "filename where fetch the authentication data")
+    Poco::Util::Option("file", "f", "filename where fetch the authentication data")
         .required(false)
         .argument("<filename>")
         .repeatable(false));
 
     options.addOption(
-    Poco::Util::Option("max_thread", "max_th",
-                "define the maximum number of simultaneous threads available. "
-                "The default value is 10")
+    Poco::Util::Option("max_thread", "max_th", "define the maximum number of "
+            "simultaneous threads available. The default value is 10")
         .required(false)
         .argument("<Max threads>")
         .validator(new Util::IntValidator(10, 64))
         .callback(Poco::Util::OptionCallback<BrokerApplication>
-                    (this, &BrokerApplication::handleServerParams)));
+            (this, &BrokerApplication::handleServerParams)));
 
     options.addOption(
-    Poco::Util::Option("idletime", "idle",
-                "define the maximum idle time for a thread before it is "
-                "terminated. The default value is 100")
+    Poco::Util::Option("idletime", "idle", "define the maximum idle time for a "
+            "thread before it is terminated. The default value is 100")
         .required(false)
         .argument("<Idle time>")
         .validator(new Util::IntValidator(1, 200))
         .callback(Poco::Util::OptionCallback<BrokerApplication>
-                    (this, &BrokerApplication::handleServerParams)));
+            (this, &BrokerApplication::handleServerParams)));
 
 #ifdef __WITH_MONGO__
     options.addOption(
@@ -230,25 +237,28 @@ void BrokerApplication::defineOptions(Poco::Util::OptionSet& options)
         .validator(new Util::RegExpValidator("file|mongodb"))
         .callback(Poco::Util::OptionCallback<BrokerApplication>
                     (this, &BrokerApplication::handleMode)));
+
     options.addOption(
     Poco::Util::Option("mongoip", "m_ip", "The IP address of the mongodb")
         .required(false)
         .argument("<IP of mongodb>")
         .repeatable(false));
+
     options.addOption(
-    Poco::Util::Option("mongoport", "m_port",
-                                 "The port where mongodb is listening to")
+    Poco::Util::Option("mongoport", "m_port", "The port where mongodb is listening to")
         .required(false)
         .argument("<Port of mongodb>")
         .repeatable(false));
+
     options.addOption(
     Poco::Util::Option("mongodb", "m_db", "The name of the db")
         .required(false)
         .argument("<Name of mongo DB>")
         .repeatable(false));
+
     options.addOption(
-    Poco::Util::Option("mongocoll", "m_coll",
-                   "The the name of the collection in 'mongodb' database")
+    Poco::Util::Option("mongocoll", "m_coll", "The the name of the collection "
+            "in 'mongodb' database")
         .required(false)
         .argument("<Mongo Collection>")
         .repeatable(false));
@@ -273,24 +283,27 @@ void BrokerApplication::handleOption(const std::string& name,
     } else if (name == "file") {
         _filename = value;
         _filename_spec = true;
-        logger.debug("Filename: "+value);
+        logger.debug("Filename: " + value);
     } else if (name == "name") {
         BrokerConnection::Broker_name = value;
-        logger.debug("Broker name: "+value);
+        logger.debug("Broker name: " + value);
+    } else if (name == "version") {
+        cout << PACKAGE_VERSION << endl;
+        exit(0);
     }
 #ifdef __WITH_MONGO__
     else if(name=="mongoip") {
         _mongo_ip = value;
-        logger.debug("Mongo IP: "+value);
+        logger.debug("Mongo IP: " + value);
     } else if(name=="mongoport") {
         _mongo_port = value;
-        logger.debug("Mongo Port: "+value);
+        logger.debug("Mongo Port: " + value);
     } else if(name=="mongodb") {
         _mongo_db = value;
-        logger.debug("Mongo db name: "+value);
+        logger.debug("Mongo db name: " + value);
     } else if(name=="mongocoll") {
         _mongo_collection = value;
-        logger.debug("Mongo collection name: "+value);
+        logger.debug("Mongo collection name: " + value);
     }
 #endif
 }
@@ -299,35 +312,36 @@ void BrokerApplication::handleOption(const std::string& name,
 void BrokerApplication::handleMode(const std::string& name,
                                     const std::string& value)
 {
-    //!\param name is a string with the option name.
-    //!\param value is a string with the value.
-    if(!value.compare("file")) _data_mode = false;
-    else _data_mode = true; //0->file 1->mongodb
-    logger.debug("Data fetching mode: "+value);
+    // name is a string with the option name.
+    // value is a string with the value.
+    if (!value.compare("file"))
+        _data_mode = false;
+    else
+        _data_mode = true; // 0->file 1->mongodb
+
+    logger.debug("Data fetching mode: " + value);
 }
 #endif
 
 void BrokerApplication::handlePort(const std::string& name,
                                         const std::string& value)
 {
-    //!
-    //!\param name is a string with the option name.
-    //!\param value is a string with the value.
+    // name is a string with the option name.
+    // value is a string with the value.
     port = (unsigned short) config().getInt("BrokerApplication.port",
-                                        NumberParser::parseUnsigned(value));
-    logger.debug("Tentacool port setted to " +
-                                        NumberFormatter::format(port));
+        NumberParser::parseUnsigned(value));
+    logger.debug("Tentacool port setted to " + NumberFormatter::format(port));
 }
 
+// Handle Server Parameters
+// is a string with the option name.
+// value is a string with the value.
 void BrokerApplication::handleServerParams(const std::string& name,
-                                                 const std::string& value)
+    const std::string& value)
 {
-    //! Handle Server Parameters
-    //!\param name is a string with the option name.
-    //!\param value is a string with the value.
-    if(name == "max_thread") {
+    if (name == "max_thread") {
         num_threads = NumberParser::parseUnsigned(value);
-    }else if(name == "idletime") {
+    } else if (name == "idletime") {
         idletime = NumberParser::parseUnsigned(value);
     }
 }
@@ -339,7 +353,8 @@ void BrokerApplication::displayHelp()
     helpFormatter.setWidth(120);
     helpFormatter.setCommand(commandName());
 #ifdef __WITH_MONGO__
-    helpFormatter.setUsage("Tentacool can run in two modes: \n"
+    helpFormatter.setUsage(string(PACKAGE_VERSION) +
+    " can run in two modes: \n"
     "-n name    [Give a specific name to the broker - default '@hp1']\n"
     "-m file    [Fetch users authentication datas from a structured file]\n"
     "-m mongodb [Fetch users authentication datas from mongodb collection]"
@@ -347,8 +362,9 @@ void BrokerApplication::displayHelp()
     "If not specified the broker fetch data from the file: 'auth_keys.dat'"
     "\n");
 #else
-    helpFormatter.setUsage("Tentacool is running in file mode: \n"
-    " broker fetch users authentication datas from a structured file\n\n"
+    helpFormatter.setUsage(string(PACKAGE_VERSION) +
+    " is running in file mode: \n"
+    "broker fetch users authentication datas from a structured file\n\n"
     "If not specified the broker fetch data from the file: 'auth_keys.dat'"
     "\n"
     "-n name    [Give a specific name to the broker - default '@hp1']\n"
@@ -360,13 +376,13 @@ void BrokerApplication::displayHelp()
 
 int BrokerApplication::main(const std::vector<std::string>& args)
 {
-    if(!m_helpRequested) {
-        try{
-            //! Main
+    if (!m_helpRequested) {
+        try {
+            // Main
             if(_data_manager == NULL)
-                    return Poco::Util::Application::EXIT_IOERR;
+                return Poco::Util::Application::EXIT_IOERR;
 
-            logger.information("Tentacool started "+debugTag);
+            logger.information("Tentacool started " + debugTag);
 
             // Create a server socket in order to listen to the port
             Net::ServerSocket svs(port);
@@ -374,19 +390,15 @@ int BrokerApplication::main(const std::vector<std::string>& args)
             // Configure some server parameters.
             Net::TCPServerParams* pParams = new Net::TCPServerParams();
             logger.information("Setting max threads number: " +
-                                        NumberFormatter::format(num_threads));
+                NumberFormatter::format(num_threads));
             pParams->setMaxThreads(num_threads);
-            //logger.information("Setting queue length: " +
-            //                            NumberFormatter::format(queuelen));
             pParams->setMaxQueued(queuelen);
-            logger.information("Setting idle time: " +
-                                        NumberFormatter::format(idletime));
+            logger.information("Setting idle time: " + NumberFormatter::format(idletime));
             pParams->setThreadIdleTime(idletime);
 
-            Net::TCPServer server(
-                        new TCPConnectionFactory(_data_manager),svs, pParams);
+            Net::TCPServer server( new TCPConnectionFactory(_data_manager), svs, pParams);
             server.start();
-            //TCPServer uses a separate thread to accept incoming connections.
+            // TCPServer uses a separate thread to accept incoming connections.
             // Thus, the call to start() returns immediately, and the server
             // continues to run in the background.
 
@@ -397,7 +409,7 @@ int BrokerApplication::main(const std::vector<std::string>& args)
 
             BrokerConnection::isStopped = true;
 
-            //free data_manager
+            // free data_manager
             delete _data_manager;
         } catch(exception& e) {
             logger.information(e.what());
@@ -406,4 +418,3 @@ int BrokerApplication::main(const std::vector<std::string>& args)
     }
     return Poco::Util::Application::EXIT_OK;
 }
-
