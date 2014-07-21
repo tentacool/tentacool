@@ -9,6 +9,16 @@ It offers to ways to fetch user authentication datas:
  - File. See [details](docs/file.md)
  - MongoDB
 
+Dependancies
+============
+
+Tentacool depends on `libpoco` for the code and from `libcppunit` for the tests.
+To install them (under Ubuntu)
+
+```
+sudo apt-get install libpoco-dev libcppunit-dev
+```
+
 Compilation
 ===========
 
