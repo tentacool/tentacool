@@ -1,3 +1,5 @@
 language: cpp
-before_install: sudo apt-get install libpoco-dev -qq
+before_install:
+    - sudo apt-get install libpoco-dev -qq
+    - sudo apt-get install libcppunit-dev -qq
 script: autoreconf -i && ./configure && make && cd tests && ./tentacool_tests
