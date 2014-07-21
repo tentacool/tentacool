@@ -44,10 +44,13 @@ install-sh
 missing
 stamp-h1
 
-#logs 
+#logs
 tentacool.log
 tentacool.log.*
 
 #exe
 tentacool
 tentacool_tests
+
+#auth_keys
+auth_keys.dat
