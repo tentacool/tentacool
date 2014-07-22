@@ -9,20 +9,19 @@
 using namespace std;
 using namespace Poco;
 
-class Hpfeeds_client
+class HpfeedsClient
 {
 public:
-    Hpfeeds_client();
-    ~Hpfeeds_client();
+    HpfeedsClient();
+    ~HpfeedsClient();
     void connect();
-    void send_auth_message(string name, string secret);
-    void send_wrong_message(uint32_t total_length, uint8_t op_code,
-                                                      string data);
-    void send_subscribe_message(string name, string channel);
-    void send_publish_message(string name, string channel, string message);
-    void receive_info_message();
-    void receive_publish_message();
-    void receive_error_message();
+    void sendAuth(string name, string secret);
+    void sendWrong(uint32_t total_length, uint8_t op_code, string data);
+    void sendSubscribe(string name, string channel);
+    void sendPublish(string name, string channel, string message);
+    void receiveInfo();
+    void receivePublish();
+    void receiveError();
     void disconnect();
 private:
     string _broker_address;
@@ -30,7 +29,6 @@ private:
     Net::StreamSocket* _sock;
     string _broker_name;
     uint32_t _nonce;
-    //char _inBuffer[MAX_BUF];
     vector<char> _inBuffer;
 };
 

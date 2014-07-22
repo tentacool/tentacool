@@ -6,7 +6,8 @@ ReadWriteLock::ReadWriteLock()
       class_mutex(PTHREAD_MUTEX_INITIALIZER),
       reader_gate(PTHREAD_COND_INITIALIZER),
       writer_gate(PTHREAD_COND_INITIALIZER)
-{}
+{
+}
 
 ReadWriteLock::~ReadWriteLock()
 {
@@ -50,7 +51,7 @@ void ReadWriteLock::w_unlock()
 {
     pthread_mutex_lock(&class_mutex);
     NoOfWriters--;
-    if(NoOfWritersWaiting > 0)
+    if (NoOfWritersWaiting > 0)
         pthread_cond_signal(&writer_gate);
     //else //Writer Preference - don't signal readers unless no writers
     pthread_cond_broadcast(&reader_gate);
