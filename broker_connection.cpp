@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <memory>
-#include <sstream>
 #include <Poco/NumberParser.h>
 #include <Poco/Net/NetException.h>
 #include <Poco/NumberFormatter.h>
@@ -33,16 +32,31 @@ inline string BrokerConnection::ip()
     return _sock.peerAddress().host().toString();
 }
 
+bool BrokerConnection::readRepeat(uint32_t size)
+{
+    int nbytes = 0;
+    while (size > 0) {
+        nbytes = _sock.receiveBytes(&_inBuffer[_offset], size);
+        if (nbytes <= 0) {
+            _logger.debug("Connection closed by peer");
+            return false;
+        }
+        _offset += nbytes;
+        size -= nbytes;
+    }
+    return true;
+}
+
 void BrokerConnection::run()
 {
     _sock = this->socket();
-    _logger.information("New connection from: "+this->ip());
+    _logger.information("New connection from: " + this->ip());
     uint32_t total_length;
     uint8_t op_code;
     bool isOpen = true;
     Poco::Timespan timeOut(10, 0); //sec, usec
-    int nbytes;
-    uint32_t how_much_read; //total_lenght+opcode+name_lenght+channel_lenght
+
+    uint32_t how_much_read;
     bool socket_status;
 
     // Start the authentication phase
@@ -65,37 +79,33 @@ void BrokerConnection::run()
         }
 
         if (socket_status) {
-            nbytes = -1;
+            _offset = 0;
 
             try {
                 // Receiving bytes from client
                 // Because the two messages from client are sent in a single stream
                 // I've to distinguish here the auth message from the publish or subscribe
-                nbytes = _sock.receiveBytes(&_inBuffer[0], sizeof(uint32_t));
-                if (nbytes <= 0) {
-                    _logger.debug("Connection closed by peer");
+                if (!this->readRepeat(sizeof(uint32_t))) {
                     isOpen = false;
                     break;
                 }
+
                 // This is the total length, so it must be < MAXBUF - HEADER = DATA
                 memcpy(&total_length,&_inBuffer[0], sizeof(uint32_t));
                 if (ntohl(total_length) > MAXBUF) {
                     // Prevent Buffer Overflow
-                    stringstream ss;
-                    ss << "Oversized Message (" << ntohl(total_length);
-                    ss << ") -> Bad client (max: " << MAXBUF << ")";
-                    sendErrorMsg(ss.str(), false);
+                    sendErrorMsg("Oversized Message (" + NumberFormatter::format(ntohl(total_length)) +
+                        ") -> Bad client (max: " + NumberFormatter::format(MAXBUF) + ")",
+                        false);
                     isOpen = false;
                     break;
                 }
                 // Get the Opcode
-                nbytes = _sock.receiveBytes(&_inBuffer[0] + sizeof(uint32_t),
-                                                          sizeof(uint8_t));
-                if (nbytes <= 0) {
-                    _logger.debug("Connection closed by peer");
+                if (!this->readRepeat(sizeof(uint8_t))) {
                     isOpen = false;
                     break;
                 }
+
                 // This is the total length, so it must be < MAXBUF - HEADER = DATA
                 memcpy(&op_code, &_inBuffer[0] + sizeof(uint32_t), sizeof(uint8_t));
                 // Check total length
@@ -112,9 +122,10 @@ void BrokerConnection::run()
                             NumberFormatter::format(ntohl(total_length)));
                 }
                 // Receive the rest of the message
-                nbytes = _sock.receiveBytes(_inBuffer.data() +
-                    sizeof(uint32_t) + sizeof(uint8_t),
-                    ntohl(total_length) - sizeof(uint32_t) - sizeof(uint8_t));
+                if (!this->readRepeat(ntohl(total_length) - sizeof(uint32_t) - sizeof(uint8_t))) {
+                    isOpen = false;
+                    break;
+                }
             } catch (Poco::Exception& exc) {
                 // Handle your network errors.
                 _logger.error("Network error: "+exc.displayText());
