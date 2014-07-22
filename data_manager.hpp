@@ -34,6 +34,9 @@ class DataManager
     typedef std::map<string,user_data> UserMap;
 
 public:
+    //! File Constructor
+    //! \brief Initialize the users data structures reading from file
+    //! \param filename The name of the file with the auth_keys
     DataManager(string filename);
 
 #ifdef __WITH_MONGO__
@@ -47,8 +50,22 @@ public:
                   const string mongo_db, const string mongo_collection);
 #endif
     virtual ~DataManager();
+
+    //! Get the secret of a user from the data storage
+    //! \param name the username
+    //! \return the secret
     const string getSecretbyName(const string name);
+
+    //! Gives if a user can subscribe to a channel
+    //! \param name the name of the user
+    //! \param channel the name of the channel
+    //! \return true if the client can publish data on the channel, false otherwise.
     bool mayPublish(const string name, const string channel) const ;
+
+    //! Gives if a user can subscribe to a channel
+    //! \param name the name of the user
+	//! \param channel the name of the channel
+    //! \return true if the client can subscribe to the channel, false otherwise
     bool maySubscribe(const string name, const string channel) const ;
 private:
     Logger& _logger;

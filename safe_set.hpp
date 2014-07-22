@@ -14,6 +14,7 @@ template <class T> class SafeSet {
     typedef std::set<T> set_t;
 
 public:
+    //! Iterator typedef
     typedef typename set_t::iterator iterator;
 
     SafeSet() {}

@@ -45,6 +45,8 @@ void hpf_add_chunk(hpf_msg&m, const u_char *data, uint32_t len);
 void hpf_add_payload(hpf_msg& m, const u_char *data, uint32_t len);
 uint32_t hpf_getsize(hpf_msg& m);
 uint8_t hpf_gettype(hpf_msg& m);
+
+//! TODO
 hpf_chunk_t *hpf_msg_get_chunk(u_char *data, size_t len);
 
 #endif

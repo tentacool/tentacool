@@ -34,6 +34,8 @@ protected:
     void handlePort(const string& name, const string& value);
     void handleServerParams(const std::string& name, const std::string& value);
     void displayHelp();
+
+    //! The main function (used by libpoco)
     int main(const vector<string>& args);
 private:
     string debugTag;
@@ -59,8 +61,11 @@ private:
 class TCPConnectionFactory : public Net::TCPServerConnectionFactory
 {
 public:
+    //! TCPConnectionFactory create the TCP connections
     TCPConnectionFactory(DataManager* data_m);
     ~TCPConnectionFactory();
+
+    //! Create a new broker connection
     Net::TCPServerConnection* createConnection(const StreamSocket& socket);
 private:
     DataManager* _data_m;

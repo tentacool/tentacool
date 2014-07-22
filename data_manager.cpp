@@ -14,9 +14,6 @@
 using namespace Poco;
 using namespace std;
 
-//! File Constructor
-//! \brief Initialize the users data structures reading from file
-//! \param filename The name of the file with the auth_keys
 DataManager::DataManager( string filename):
     _logger(Logger::get("HF_Broker")), _mode(false), _filename(filename)
 {
@@ -95,8 +92,6 @@ DataManager::~DataManager()
 
 const string DataManager::getSecretbyName(const string name)
 {
-    //! Return the secret of the specified user
-    //! \param Username the name of the user
     if (name.empty())
         throw Poco::Exception("Invalid User argument!");
     UserMap::const_iterator iter = _usersMap.find(name);
@@ -108,10 +103,6 @@ const string DataManager::getSecretbyName(const string name)
 }
 bool DataManager::maySubscribe(const string name, const string channel) const
 {
-    //!
-    //! Return true if the client can subscribe to the channel, false otherwise
-    //! \param Username the name of the user
-	//! \param Channel the name of the channel
     if (name.empty() || channel.empty())
         throw  Poco::Exception("Empty name or channel!");
     UserMap::const_iterator iter = _usersMap.find(name);
@@ -128,9 +119,6 @@ bool DataManager::maySubscribe(const string name, const string channel) const
 
 bool DataManager::mayPublish(const string name, const string channel) const
 {
-    //! Return true if the client can publish data on the channel, false otherwise.
-    //! \param Username the name of the user
-    //! \param Channel the name of the channel
     if (name.empty() || channel.empty())
         throw Poco::Exception("Empty name or channel!");
     UserMap::const_iterator iter = _usersMap.find(name);

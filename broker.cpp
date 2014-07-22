@@ -38,7 +38,7 @@ using Poco::AutoPtr;
 using Poco::Channel;
 using Poco::PatternFormatter;
 
-//! TCPConnectionFactory create the TCP connections
+
 TCPConnectionFactory::TCPConnectionFactory(DataManager* data_m) : _data_m(data_m)
 {
 }
