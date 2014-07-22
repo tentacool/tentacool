@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <memory>
+#include <sstream>
 #include <Poco/NumberParser.h>
 #include <Poco/Net/NetException.h>
 #include <Poco/NumberFormatter.h>
@@ -80,7 +81,10 @@ void BrokerConnection::run()
                 memcpy(&total_length,&_inBuffer[0], sizeof(uint32_t));
                 if (ntohl(total_length) > MAXBUF) {
                     // Prevent Buffer Overflow
-                    sendErrorMsg("Oversized Message -> Bad client", false);
+                    stringstream ss;
+                    ss << "Oversized Message (" << ntohl(total_length);
+                    ss << ") -> Bad client (max: " << MAXBUF << ")";
+                    sendErrorMsg(ss.str(), false);
                     isOpen = false;
                     break;
                 }
@@ -176,7 +180,7 @@ void BrokerConnection::run()
                     }
                     case OP_PUBLISH: {
                         how_much_read = 5 + 1 + 1;
-                        _logger.debug("I've got a publish...");
+                        //_logger.debug("I've got a publish...");
                         //hpf_msg_t *pub_msg = NULL;// TODO
                         try {
                             // Get the name
