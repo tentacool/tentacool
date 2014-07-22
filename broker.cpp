@@ -78,17 +78,16 @@ BrokerApplication::~BrokerApplication()
 int BrokerApplication::getPath(char* pBuf)
 {
     //! Retrieve the path of the Broker executable
-    // TODO C -> C++
-    char szTmp[PATH_MAX];
-    sprintf(szTmp, "/proc/self/exe");
-    int bytes = readlink(szTmp, pBuf, PATH_MAX);
+    int bytes = readlink("/proc/self/exe", pBuf, PATH_MAX);
     if (bytes >= 0) {
         pBuf[bytes] = '\0';
         string line(pBuf, bytes);
         line = line.substr(0, line.find_last_of("\\/"));
         line += '/';
-        sprintf(pBuf, "%s", line.c_str());
-        return line.length();
+        size_t length = line.copy(pBuf, line.length());
+        pBuf[length] = '\0';
+        if(length == line.length())
+            return line.length();
     };
     return -1;
 }
