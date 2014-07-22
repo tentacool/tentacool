@@ -28,7 +28,7 @@ DataManager::DataManager( string filename):
         //TODO More input Validation?
         if (line.empty())
             break;
-        if (line.length() > 4*MAX_FIELD_LENGTH)
+        if (line.length() > 4 * MAX_FIELD_LENGTH)
             throw Poco::Exception("One or more fields are too long!");
 
         StringTokenizer fields(line,";",StringTokenizer::TOK_TRIM
@@ -37,12 +37,12 @@ DataManager::DataManager( string filename):
             throw Poco::Exception("Invalid file structure!");
         user_data u;
         u.secret = fields[1];
-        StringTokenizer pub_channels(fields[2],",",StringTokenizer::TOK_TRIM);
-        StringTokenizer sub_channels(fields[3],",",StringTokenizer::TOK_TRIM);
-        for (StringTokenizer::Iterator iter= pub_channels.begin();
+        StringTokenizer pub_channels(fields[2], ",", StringTokenizer::TOK_TRIM);
+        StringTokenizer sub_channels(fields[3], ",", StringTokenizer::TOK_TRIM);
+        for (StringTokenizer::Iterator iter = pub_channels.begin();
                 iter!=pub_channels.end();iter++)
             u._publish_chs.insert((*iter));
-        for(StringTokenizer::Iterator iter2= sub_channels.begin();
+        for (StringTokenizer::Iterator iter2= sub_channels.begin();
                 iter2!=sub_channels.end();iter2++)
             u._subscribe_chs.insert(*iter2);
         _usersMap[fields[0]] = u;
@@ -52,7 +52,7 @@ DataManager::DataManager( string filename):
 }
 
 #ifdef __WITH_MONGO__
-//!File Constructor
+//! File Constructor
 //!\brief Initialize the users data structures extracting datas from a Mongodb collection
 //!\param Mongo IP
 //!\param Mongo Port
@@ -101,7 +101,7 @@ const string DataManager::getSecretbyName(const string name)
 {
     //! Return the secret of the specified user
     //! \param Username the name of the user
-    if  (name.empty())
+    if (name.empty())
         throw Poco::Exception("Invalid User argument!");
     UserMap::const_iterator iter = _usersMap.find(name);
     if (iter!=_usersMap.end()) { //found it!
@@ -121,7 +121,7 @@ bool DataManager::may_subscribe (const string name, const string channel) const
     UserMap::const_iterator iter = _usersMap.find(name);
     if (iter!=_usersMap.end()) { //found it!
         user_data u = (*iter).second;
-        if(find(u._subscribe_chs.begin(), u._subscribe_chs.end(), channel)!=u._subscribe_chs.end())
+        if(find(u._subscribe_chs.begin(), u._subscribe_chs.end(), channel) != u._subscribe_chs.end())
             return true;
         else
             return false;
@@ -141,7 +141,7 @@ bool DataManager::may_publish (const string name, const string channel) const
 
     if (iter!=_usersMap.end()) { //found it!
         user_data u = (*iter).second;
-        if(find(u._publish_chs.begin(), u._publish_chs.end(), channel)!=u._publish_chs.end())
+        if (find(u._publish_chs.begin(), u._publish_chs.end(), channel) != u._publish_chs.end())
             return true;
         else
             return false;
