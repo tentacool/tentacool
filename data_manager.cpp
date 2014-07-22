@@ -52,12 +52,6 @@ DataManager::DataManager( string filename):
 }
 
 #ifdef __WITH_MONGO__
-//! File Constructor
-//!\brief Initialize the users data structures extracting datas from a Mongodb collection
-//!\param Mongo IP
-//!\param Mongo Port
-//!\param Mongo DB name
-//!\param Mongo Collection name
 DataManager::DataManager(const string mongo_ip, const string mongo_port,
     const string mongo_db, const string mongo_collection) :
         _logger(Logger::get("HF_Broker")), _mode(true), _mongoip(mongo_ip),
@@ -95,7 +89,9 @@ DataManager::DataManager(const string mongo_ip, const string mongo_port,
 }
 #endif
 
-DataManager::~DataManager() {}
+DataManager::~DataManager()
+{
+}
 
 const string DataManager::getSecretbyName(const string name)
 {
@@ -110,7 +106,7 @@ const string DataManager::getSecretbyName(const string name)
         throw  Poco::Exception("User not present!");
     }
 }
-bool DataManager::may_subscribe (const string name, const string channel) const
+bool DataManager::maySubscribe(const string name, const string channel) const
 {
     //!
     //! Return true if the client can subscribe to the channel, false otherwise
@@ -130,7 +126,7 @@ bool DataManager::may_subscribe (const string name, const string channel) const
     }
 }
 
-bool DataManager::may_publish (const string name, const string channel) const
+bool DataManager::mayPublish(const string name, const string channel) const
 {
     //! Return true if the client can publish data on the channel, false otherwise.
     //! \param Username the name of the user

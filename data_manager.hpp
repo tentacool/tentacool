@@ -29,19 +29,27 @@ class DataManager
         string secret;              //! User secret
         set<string> _publish_chs;   //! Publish channels associated to the user
         set<string> _subscribe_chs; //! Subscribe channels associated to the user
-    }user_data;
+    } user_data;
 
     typedef std::map<string,user_data> UserMap;
 
 public:
-    //DataManager(); //! Dummy constructor
     DataManager(string filename);
+
+#ifdef __WITH_MONGO__
+    //! Mongo constructor
+    //! \brief Initialize the users data structures extracting datas from a Mongodb collection
+    //! \param Mongo IP
+    //! \param Mongo Port
+    //! \param Mongo DB name
+    //! \param Mongo Collection name
     DataManager(const string mongo_ip, const string mongodb_port,
                   const string mongo_db, const string mongo_collection);
+#endif
     virtual ~DataManager();
     const string getSecretbyName(const string name);
-    bool may_publish (const string name, const string channel) const ;
-    bool may_subscribe (const string name, const string channel) const ;
+    bool mayPublish(const string name, const string channel) const ;
+    bool maySubscribe(const string name, const string channel) const ;
 private:
     Logger& _logger;
     bool _mode;

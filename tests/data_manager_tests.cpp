@@ -214,57 +214,57 @@ void DataManager_test::testMongoDB_wrongDB()
 void DataManager_test::testMongoDBSubscribe_present()
 {
     DataManager dm_mongodb_work("localhost", "27017", "hpfeeds", "auth_key");
-    CPPUNIT_ASSERT(dm_mongodb_work.may_subscribe("aldo", "ch1"));
+    CPPUNIT_ASSERT(dm_mongodb_work.maySubscribe("aldo", "ch1"));
 }
 
 void DataManager_test::testMongoDBPublish_present()
 {
     DataManager dm_mongodb_work("localhost", "27017", "hpfeeds", "auth_key");
-    CPPUNIT_ASSERT(dm_mongodb_work.may_publish("aldo", "ch1"));
+    CPPUNIT_ASSERT(dm_mongodb_work.mayPublish("aldo", "ch1"));
 }
 
 void DataManager_test::testMongoDBSubscribe_user_not_present()
 {
     DataManager dm_mongodb_work("localhost", "27017", "hpfeeds", "auth_key");
-    CPPUNIT_ASSERT_THROW(dm_mongodb_work.may_subscribe("mark", "ch1"),
+    CPPUNIT_ASSERT_THROW(dm_mongodb_work.maySubscribe("mark", "ch1"),
         Poco::Exception);
 }
 
 void DataManager_test::testMongoDBPublish_user_not_present()
 {
-    CPPUNIT_ASSERT_THROW(dm_mongodb_work->may_publish("joy", "ch1"),
+    CPPUNIT_ASSERT_THROW(dm_mongodb_work->mayPublish("joy", "ch1"),
         Poco::Exception);
 }
 
 void DataManager_test::testMongoDBSubscribe_channel_not_present()
 {
     CPPUNIT_ASSERT(
-        dm_mongodb_work->may_subscribe("aldo", "missingchannel") == false);
+        dm_mongodb_work->maySubscribe("aldo", "missingchannel") == false);
 }
 
 void DataManager_test::testMongoDBPublish_channel_not_present()
 {
-    CPPUNIT_ASSERT(dm_mongodb_work->may_publish("aldo", "channel?") == false);
+    CPPUNIT_ASSERT(dm_mongodb_work->mayPublish("aldo", "channel?") == false);
 }
 
 void DataManager_test::testMongoDBSubscribe_name_null()
 {
-    CPPUNIT_ASSERT_THROW(dm_mongodb_work->may_subscribe(nullstring, "channel?"),
+    CPPUNIT_ASSERT_THROW(dm_mongodb_work->maySubscribe(nullstring, "channel?"),
         Poco::Exception);
 }
 void DataManager_test::testMongoDBPublish_name_null()
 {
-    CPPUNIT_ASSERT_THROW(dm_mongodb_work->may_publish(nullstring, "channel?"),
+    CPPUNIT_ASSERT_THROW(dm_mongodb_work->mayPublish(nullstring, "channel?"),
         Poco::Exception);
 }
 void DataManager_test::testMongoDBSubscribe_channel_null()
 {
-    CPPUNIT_ASSERT_THROW(dm_mongodb_work->may_subscribe("aldo", nullstring),
+    CPPUNIT_ASSERT_THROW(dm_mongodb_work->maySubscribe("aldo", nullstring),
         Poco::Exception);
 }
 void DataManager_test::testMongoDBPublish_channel_null()
 {
-    CPPUNIT_ASSERT_THROW(dm_mongodb_work->may_publish("aldo", nullstring),
+    CPPUNIT_ASSERT_THROW(dm_mongodb_work->mayPublish("aldo", nullstring),
         Poco::Exception);
 }
 void DataManager_test::testMongoDB_GetSecretByNULLname()
@@ -281,63 +281,63 @@ void DataManager_test::testMongoDB_GetSecretByNOTEXISTINGname()
 void DataManager_test::testFileSubscribe_present()
 {
     DataManager dm_file(filename);
-    CPPUNIT_ASSERT(dm_file.may_subscribe("aldo", "ch1"));
+    CPPUNIT_ASSERT(dm_file.maySubscribe("aldo", "ch1"));
 }
 
 void DataManager_test::testFilePublish_present()
 {
     DataManager dm_file(filename);
-    CPPUNIT_ASSERT(dm_file.may_publish("aldo", "ch1"));
+    CPPUNIT_ASSERT(dm_file.mayPublish("aldo", "ch1"));
 }
 
 void DataManager_test::testFileSubscribe_user_not_present()
 {
     DataManager dm_file(filename);
-    CPPUNIT_ASSERT_THROW(dm_file.may_subscribe("mark", "ch1"),
+    CPPUNIT_ASSERT_THROW(dm_file.maySubscribe("mark", "ch1"),
         Poco::Exception);
 }
 
 void DataManager_test::testFilePublish_user_not_present()
 {
     DataManager dm_file(filename);
-    CPPUNIT_ASSERT_THROW(dm_file.may_publish("joy", "ch1"),
+    CPPUNIT_ASSERT_THROW(dm_file.mayPublish("joy", "ch1"),
         Poco::Exception);
 }
 
 void DataManager_test::testFileSubscribe_channel_not_present()
 {
     DataManager dm_file(filename);
-    CPPUNIT_ASSERT(dm_file.may_subscribe("aldo", "missingchannel") == false);
+    CPPUNIT_ASSERT(dm_file.maySubscribe("aldo", "missingchannel") == false);
 }
 
 void DataManager_test::testFilePublish_channel_not_present()
 {
     DataManager dm_file(filename);
-    CPPUNIT_ASSERT(dm_file.may_publish("aldo", "channel?") == false);
+    CPPUNIT_ASSERT(dm_file.mayPublish("aldo", "channel?") == false);
 }
 
 void DataManager_test::testFileSubscribe_name_null()
 {
     DataManager dm_file(filename);
-    CPPUNIT_ASSERT_THROW(dm_file.may_subscribe(nullstring, "channel?"),
+    CPPUNIT_ASSERT_THROW(dm_file.maySubscribe(nullstring, "channel?"),
         Poco::Exception);
 }
 void DataManager_test::testFilePublish_name_null()
 {
     DataManager dm_file(filename);
-    CPPUNIT_ASSERT_THROW(dm_file.may_publish(nullstring, "channel?"),
+    CPPUNIT_ASSERT_THROW(dm_file.mayPublish(nullstring, "channel?"),
         Poco::Exception);
 }
 void DataManager_test::testFileSubscribe_channel_null()
 {
     DataManager dm_file(filename);
-    CPPUNIT_ASSERT_THROW(dm_file.may_subscribe("aldo", nullstring),
+    CPPUNIT_ASSERT_THROW(dm_file.maySubscribe("aldo", nullstring),
         Poco::Exception);
 }
 void DataManager_test::testFilePublish_channel_null()
 {
     DataManager dm_file(filename);
-    CPPUNIT_ASSERT_THROW(dm_file.may_publish("aldo", nullstring),
+    CPPUNIT_ASSERT_THROW(dm_file.mayPublish("aldo", nullstring),
         Poco::Exception);
 }
 void DataManager_test::testFile_GetSecretByNULLname()

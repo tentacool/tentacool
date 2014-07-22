@@ -158,7 +158,7 @@ void BrokerConnection::run()
                                     &_inBuffer[HEADER + 1] + s_name.length()),
                                     ntohl(total_length) - HEADER - 1 - s_name.length());
 
-                            if (!_data_manager->may_subscribe(s_name, s_channel)) {
+                            if (!_data_manager->maySubscribe(s_name, s_channel)) {
                                  // The client can't subscribe to the channel
                                  _logger.information(s_name +
                                          " cannot subscribe to " + s_channel);
@@ -207,7 +207,7 @@ void BrokerConnection::run()
                                break;
                             }
 
-                            if (!_data_manager->may_publish(s_name,s_channel)) {
+                            if (!_data_manager->mayPublish(s_name,s_channel)) {
                                 // The client can't publish to the specified channel
                                 _logger.information(s_name +
                                             " cannot publish to "+s_channel);
