@@ -14,6 +14,9 @@
 using namespace Poco;
 using namespace std;
 
+//! File Constructor
+//! \brief Initialize the users data structures reading from file
+//! \param filename The name of the file with the auth_keys
 DataManager::DataManager( string filename):
     _logger(Logger::get("HF_Broker")), _mode(false), _filename(filename)
 {
@@ -22,7 +25,6 @@ DataManager::DataManager( string filename):
         throw Poco::Exception("Error opening the file:"+filename);
     string line = "";
     while (getline(_input, line)) {
-        //TODO More input Validation?
         if (line.empty())
             break;
         if (line.length() > 4 * MAX_FIELD_LENGTH)
@@ -49,6 +51,12 @@ DataManager::DataManager( string filename):
 }
 
 #ifdef __WITH_MONGO__
+//! File Constructor
+//!\brief Initialize the users data structures extracting datas from a Mongodb collection
+//!\param Mongo IP
+//!\param Mongo Port
+//!\param Mongo DB name
+//!\param Mongo Collection name
 DataManager::DataManager(const string mongo_ip, const string mongo_port,
     const string mongo_db, const string mongo_collection) :
         _logger(Logger::get("HF_Broker")), _mode(true), _mongoip(mongo_ip),
@@ -86,12 +94,12 @@ DataManager::DataManager(const string mongo_ip, const string mongo_port,
 }
 #endif
 
-DataManager::~DataManager()
-{
-}
+DataManager::~DataManager() {}
 
 const string DataManager::getSecretbyName(const string name)
 {
+    //! Return the secret of the specified user
+    //! \param Username the name of the user
     if (name.empty())
         throw Poco::Exception("Invalid User argument!");
     UserMap::const_iterator iter = _usersMap.find(name);
@@ -101,8 +109,12 @@ const string DataManager::getSecretbyName(const string name)
         throw  Poco::Exception("User not present!");
     }
 }
-bool DataManager::maySubscribe(const string name, const string channel) const
+bool DataManager::may_subscribe(const string name, const string channel) const
 {
+    //!
+    //! Return true if the client can subscribe to the channel, false otherwise
+    //! \param Username the name of the user
+	//! \param Channel the name of the channel
     if (name.empty() || channel.empty())
         throw  Poco::Exception("Empty name or channel!");
     UserMap::const_iterator iter = _usersMap.find(name);
@@ -117,8 +129,11 @@ bool DataManager::maySubscribe(const string name, const string channel) const
     }
 }
 
-bool DataManager::mayPublish(const string name, const string channel) const
+bool DataManager::may_publish(const string name, const string channel) const
 {
+    //! Return true if the client can publish data on the channel, false otherwise.
+    //! \param Username the name of the user
+    //! \param Channel the name of the channel
     if (name.empty() || channel.empty())
         throw Poco::Exception("Empty name or channel!");
     UserMap::const_iterator iter = _usersMap.find(name);

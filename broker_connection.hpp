@@ -68,6 +68,9 @@ private:
     //! The message router
     static MessageRouter _router;
 
+    //! The socket read offset
+    uint32_t _offset;
+
     //! The network buffer
     vector<char> _inBuffer;
 
@@ -88,6 +91,9 @@ private:
 
     //! Send an error message to the client
     void sendErrorMsg(const string msg, bool sendToClient);
+
+    //! Loop read from socket
+    bool readRepeat(uint32_t size);
 };
 
 #endif

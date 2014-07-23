@@ -60,13 +60,13 @@ public:
     //! \param name the name of the user
     //! \param channel the name of the channel
     //! \return true if the client can publish data on the channel, false otherwise.
-    bool mayPublish(const string name, const string channel) const ;
+    bool may_publish(const string name, const string channel) const ;
 
     //! Gives if a user can subscribe to a channel
     //! \param name the name of the user
 	//! \param channel the name of the channel
     //! \return true if the client can subscribe to the channel, false otherwise
-    bool maySubscribe(const string name, const string channel) const ;
+    bool may_subscribe(const string name, const string channel) const ;
 private:
     Logger& _logger;
     bool _mode;
