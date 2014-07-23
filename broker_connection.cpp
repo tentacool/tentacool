@@ -36,7 +36,7 @@ inline string BrokerConnection::ip()
 void BrokerConnection::run()
 {
     _sock = this->socket();
-    _logger.information("New connection from: "+this->ip());
+    _logger.information("New connection from: " + this->ip());
     uint32_t total_length;
     uint8_t op_code;
     bool isOpen = true;
@@ -59,7 +59,7 @@ void BrokerConnection::run()
         try {
             socket_status = _sock.poll(timeOut,Poco::Net::Socket::SELECT_READ);
         } catch(Poco::Exception& exc) {
-            _logger.error("Poll error: "+exc.displayText());
+            _logger.error("Poll error: " + exc.displayText());
             isOpen = false;
             break;
         }
@@ -117,7 +117,7 @@ void BrokerConnection::run()
                     ntohl(total_length) - sizeof(uint32_t) - sizeof(uint8_t));
             } catch (Poco::Exception& exc) {
                 // Handle your network errors.
-                _logger.error("Network error: "+exc.displayText());
+                _logger.error("Network error: " + exc.displayText());
                 isOpen = false;
                 break;
             }
@@ -139,12 +139,12 @@ void BrokerConnection::run()
                 }
                 switch (int(op_code)) {
                     case OP_SUBSCRIBE: {
-                        how_much_read = 4+1+1;
+                        how_much_read = 4 + 1 + 1;
                         _logger.debug("I've got a subscription...");
                         try{
                             // Get the name
                             string s_name(
-                                    reinterpret_cast<char*>(&_inBuffer[5+1]),
+                                    reinterpret_cast<char*>(&_inBuffer[5 + 1]),
                                     _inBuffer[5]);
                             how_much_read += s_name.length();
                             if (how_much_read >= ntohl(total_length)) {
@@ -184,7 +184,7 @@ void BrokerConnection::run()
                         try {
                             // Get the name
                             string s_name(
-                                    reinterpret_cast<char*>(&_inBuffer[5+1]),
+                                    reinterpret_cast<char*>(&_inBuffer[5 + 1]),
                                     _inBuffer[5]);
                             how_much_read += s_name.length();
                             if(how_much_read >= ntohl(total_length)) {
@@ -210,7 +210,7 @@ void BrokerConnection::run()
                             if (!_data_manager->mayPublish(s_name,s_channel)) {
                                 // The client can't publish to the specified channel
                                 _logger.information(s_name +
-                                            " cannot publish to "+s_channel);
+                                            " cannot publish to " + s_channel);
                                 sendErrorMsg("accessfail", true);
                                 how_much_read = 0;
                                 break;
@@ -274,7 +274,7 @@ void BrokerConnection::authUser()
     uint32_t how_much_read = 4 + 1 + 1; //total_lenght + opcode+ name length
 
     if (msg->hdr.opcode != OP_AUTH) {
-        _logger.error("Unexpected message: "+
+        _logger.error("Unexpected message: " +
                 NumberFormatter::format(msg->hdr.opcode));
         sendErrorMsg("accessfail", true);
         return;
@@ -285,7 +285,7 @@ void BrokerConnection::authUser()
        return;
     }
 
-    string username((char*) &_inBuffer[5+1], _inBuffer[5]);
+    string username((char*) &_inBuffer[5 + 1], _inBuffer[5]);
     how_much_read += username.length();
     if(how_much_read >= ntohl(msg->hdr.msglen)) {
         sendErrorMsg("accessfail", true);
@@ -301,14 +301,14 @@ void BrokerConnection::authUser()
     }
     msg = NULL;
 
-    _logger.information("Getting authorization request for "+username);
+    _logger.information("Getting authorization request for " + username);
     try {
         string secret = _data_manager->getSecretbyName(username);
         if (_auth.authenticate(hash, secret ) == true) {
-            _logger.information("User "+username+" authenticated");
+            _logger.information("User " + username + " authenticated");
             _state = S_AUTHENTICATED;
         } else {
-            _logger.information("Authentication failed for "+username);
+            _logger.information("Authentication failed for " + username);
             sendErrorMsg("Authentication failed", true);
             _state = S_ERROR;
         }
