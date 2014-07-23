@@ -13,5 +13,42 @@ tentacool
 *.la
 *.a
 
-# Cmake build dir
-build/
+#Code Coverage Script dir
+tests/code_coverage
+
+#Code Coverage measurement database and the execution report
+*.csmes
+*.csexe
+
+# Backup files
+*~
+
+# Autotools generated files
+.deps/
+.dirstamp
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache/
+compile
+config.h
+config.h.in
+config.log
+config.status
+configure
+depcomp
+install-sh
+missing
+stamp-h1
+docs/html
+
+#logs
+tentacool.log
+tentacool.log.*
+
+#exe
+tentacool
+tentacool_tests
+
+#auth_keys
+auth_keys.dat
