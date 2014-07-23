@@ -55,7 +55,7 @@ Net::TCPServerConnection* TCPConnectionFactory::createConnection(
 
 BrokerApplication::BrokerApplication() :
         debugTag(""), m_helpRequested(false), _debug_mode(false),
-        logger(Logger::get("HF_Broker")), port(10000), num_threads(20),
+        logger(Logger::get("Tentacool")), port(10000), num_threads(20),
         queuelen(46), idletime(100), _data_mode(false), _stdout_logging(false),
         _filename_spec(false), _exe_path("./"), _log_file("tentacool.log"),
         _filename("auth_keys.dat"), _mongo_ip("127.0.0.1"), _mongo_port("27017"),

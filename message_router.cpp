@@ -8,7 +8,7 @@
 using namespace std;
 
 MessageRouter::MessageRouter() :
-    _logger(Poco::Logger::get("HF_Broker"))
+    _logger(Poco::Logger::get("Tentacool"))
 {
 }
 

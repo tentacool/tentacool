@@ -20,7 +20,7 @@ MessageRouter BrokerConnection::_router;
 BrokerConnection::BrokerConnection(const Net::StreamSocket& s, DataManager* data_manager) :
     Net::TCPServerConnection(s),
     _sock(this->socket()),
-    _logger(Poco::Logger::get("HF_Broker")),
+    _logger(Poco::Logger::get("Tentacool")),
     _data_manager(data_manager), _state(S_INIT)
 {
     //Reserve an initial chunk for the buffer

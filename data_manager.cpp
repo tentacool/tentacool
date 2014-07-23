@@ -18,7 +18,7 @@ using namespace std;
 //! \brief Initialize the users data structures reading from file
 //! \param filename The name of the file with the auth_keys
 DataManager::DataManager( string filename):
-    _logger(Logger::get("HF_Broker")), _mode(false), _filename(filename)
+    _logger(Logger::get("Tentacool")), _mode(false), _filename(filename)
 {
     _input.open(_filename.c_str());
     if (!_input)
@@ -59,7 +59,7 @@ DataManager::DataManager( string filename):
 //!\param Mongo Collection name
 DataManager::DataManager(const string mongo_ip, const string mongo_port,
     const string mongo_db, const string mongo_collection) :
-        _logger(Logger::get("HF_Broker")), _mode(true), _mongoip(mongo_ip),
+        _logger(Logger::get("Tentacool")), _mode(true), _mongoip(mongo_ip),
         _mongoport(mongo_port), _mongo_db(mongo_db), _mongo_collection(mongo_collection)
 {
     mongo::DBClientConnection _conn;
