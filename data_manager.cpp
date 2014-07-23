@@ -51,6 +51,12 @@ DataManager::DataManager( string filename):
 }
 
 #ifdef __WITH_MONGO__
+//! File Constructor
+//!\brief Initialize the users data structures extracting datas from a Mongodb collection
+//!\param Mongo IP
+//!\param Mongo Port
+//!\param Mongo DB name
+//!\param Mongo Collection name
 DataManager::DataManager(const string mongo_ip, const string mongo_port,
     const string mongo_db, const string mongo_collection) :
         _logger(Logger::get("HF_Broker")), _mode(true), _mongoip(mongo_ip),
