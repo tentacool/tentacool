@@ -1,5 +1,4 @@
-Tentacool
-=========
+# Tentacool
 
 [![Build Status](https://travis-ci.org/abes975/tentacool.svg?branch=devel-aldo)](https://travis-ci.org/abes975/tentacool)
 
@@ -9,8 +8,7 @@ It offers to ways to fetch user authentication datas:
  - File. See [details](docs/file.md)
  - MongoDB
 
-Dependancies
-============
+## Dependancies
 
 Tentacool depends on `libpoco` for the code and from `libcppunit` for the tests.
 To install them (under Ubuntu)
@@ -19,8 +17,7 @@ To install them (under Ubuntu)
 sudo apt-get install libpoco-dev libcppunit-dev
 ```
 
-Compilation
-===========
+## Compilation
 
 To compile the project, follow the next instructions:
 
@@ -45,3 +42,7 @@ autoreconf -i
 ./configure --with-poco=POCO_DIR --with-mongodb=MONGODB_CLIENT_DIR
 make
 ```
+
+## Performance
+
+Have a look at [this document](docs/performance.md)
