@@ -73,5 +73,5 @@ echo MESSAGE | ./hpclient -h HOST -p 10000 -i test -s test -c test -P -f
 
 ## Results
 
-With this setup we have measured a throughput of about 65000 msg/s, using
+With this setup we have measured a throughput of about 65000 msgs/s, using
 fast ethernet.
