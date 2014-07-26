@@ -13,6 +13,9 @@ tentacool
 *.la
 *.a
 
+# Dependences files
+*.d
+
 #Code Coverage Script dir
 tests/code_coverage
 
@@ -49,6 +52,7 @@ tentacool.log.*
 #exe
 tentacool
 tentacool_tests
+tentacool_tests_cc
 
 #auth_keys
 auth_keys.dat
