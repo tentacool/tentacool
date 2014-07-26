@@ -2,6 +2,15 @@
 LOCAL_PATH="../"
 SOURCE_PATH="../../"
 DIR="code_coverage"
+CONFIG="-DHAVE_CONFIG_H"
+PACKAGE_VERSION="-DPACKAGE_VERSION=\"nd\""
+
+#CHECK for auth_keys_sample.dat file
+#if [ ! -e ../auth_keys_sample.dat ];
+#then
+#        echo "[Code Coverage] Creating code_coverage dir..."
+#       
+#fi
 
 
 #CHECK for mongo option
@@ -36,9 +45,9 @@ fi
 echo "[Code Coverage] Entering folder..."
 cd code_coverage
 
-        echo "[Code Coverage] Copying data needed..."
-        cp -avr ../data/ .
-		cp -avr ../auth_keys.dat .
+echo "[Code Coverage] Copying data needed..."
+cp -avr ../data/ .
+#cp -avr ../auth_keys.dat .
 
 #Building file: authenticator.cpp
 csg++ $MONGO -I/usr/local/include/Poco -I/usr/local/include/Poco/Net -I/usr/local/include/Poco/Util -I/usr/local/include/cppunit -I/usr/include/mongo/client -O3 -g -std=c++0x -Wall -Werror -c -fmessage-length=0 -MMD -MP -MF"authenticator.d" -MT"authenticator.d" -o "authenticator.o" $SOURCE_PATH"authenticator.cpp"
@@ -65,7 +74,7 @@ csg++ $MONGO -I/usr/local/include/Poco -I/usr/local/include/Poco/Net -I/usr/loca
 echo "[Code Coverage] Finished building: broker_connection.cpp"
 
 #Building file: broker.cpp
-csg++ $MONGO -I/usr/local/include/Poco -I/usr/local/include/Poco/Net -I/usr/local/include/Poco/Util -I/usr/local/include/cppunit -I/usr/include/mongo/client -O3 -g -std=c++0x -Wall -Werror -c -fmessage-length=0 -MMD -MP -MF"broker.d" -MT"broker.d" -o "broker.o" $SOURCE_PATH"broker.cpp"
+csg++ $MONGO $PACKAGE_VERSION -I/usr/local/include/Poco -I/usr/local/include/Poco/Net -I/usr/local/include/Poco/Util -I/usr/local/include/cppunit -I/usr/include/mongo/client -O3 -g -std=c++0x -Wall -Werror -c -fmessage-length=0 -MMD -MP -MF"broker.d" -MT"broker.d" -o "broker.o" $SOURCE_PATH"broker.cpp"
 echo "[Code Coverage] Finished building: broker.cpp"
 
 #Building file: hpfeeds_client.cpp [NO cc]
@@ -93,7 +102,7 @@ g++ $MONGO -I/usr/local/include/Poco -I/usr/local/include/Poco/Net -I/usr/local/
 echo "[Code Coverage] Finished building: hpfeedbroker_tests.cpp"
  
 #Linking
-csg++ -L/usr/local/lib -L/usr/lib -o "hpfeeds_broker_tests"  ./authenticator.o ./data_manager.o ./hpfeeds.o ./rw_lock_t.o ./message_router.o ./broker_connection.o ./broker.o ./hpfeeds_client.o ./hpfeedbroker_tests.o ./authenticator_tests.o ./flag_broker_started.o ./data_manager_tests.o ./hpfeeds_tests.o ./integration_tests.o -lPocoNet -lPocoUtil -lPocoFoundation -lcppunit -lmongoclient -lboost_filesystem-mt -lboost_system-mt -lboost_thread-mt -lboost_program_options-mt -lpthread
+csg++ -L/usr/local/lib -L/usr/lib -o "hpfeeds_broker_tests"  ./authenticator.o ./data_manager.o ./hpfeeds.o ./rw_lock_t.o ./message_router.o ./broker_connection.o ./broker.o ./hpfeeds_client.o ./hpfeedbroker_tests.o ./authenticator_tests.o ./data_manager_tests.o ./hpfeeds_tests.o ./integration_tests.o -lPocoNet -lPocoUtil -lPocoFoundation -lcppunit -lmongoclient -lboost_filesystem-mt -lboost_system-mt -lboost_thread-mt -lboost_program_options-mt -lpthread
 echo "[Code Coverage] Executable generated!"
 
 ./hpfeeds_broker_tests

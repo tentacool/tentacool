@@ -29,7 +29,7 @@
 #include "data_manager.hpp"
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 using namespace std;
@@ -54,7 +54,7 @@ Net::TCPServerConnection* TCPConnectionFactory::createConnection(
 }
 
 BrokerApplication::BrokerApplication() :
-        debugTag(""), m_helpRequested(false), _debug_mode(false),
+        debugTag(""), m_helpRequested(false), m_version(false), _debug_mode(false),
         logger(Logger::get("Tentacool")), port(10000), num_threads(20),
         queuelen(46), idletime(100), _data_mode(false), _stdout_logging(false),
         _filename_spec(false), _exe_path("./"), _log_file("tentacool.log"),
@@ -288,7 +288,7 @@ void BrokerApplication::handleOption(const std::string& name,
         logger.debug("Broker name: " + value);
     } else if (name == "version") {
         cout << PACKAGE_VERSION << endl;
-        exit(0);
+        m_version = true;
     }
 #ifdef __WITH_MONGO__
     else if(name=="mongoip") {
@@ -375,7 +375,7 @@ void BrokerApplication::displayHelp()
 
 int BrokerApplication::main(const std::vector<std::string>& args)
 {
-    if (!m_helpRequested) {
+    if (!m_helpRequested && !m_version) {
         try {
             // Main
             if(_data_manager == NULL)

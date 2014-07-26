@@ -1,5 +1,5 @@
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #include "integration_tests.hpp"
@@ -130,6 +130,18 @@ void Integration_test::testHelp()
     delete a;
 }
 
+void Integration_test::testVersion()
+{
+    Arguments* a = new Arguments();
+    a->insert(a->end(),"tentacool_integration_test");
+    a->insert(a->end(),"--version");
+    pthread_t broker_thread = startBroker(a);
+    sleep(BROKER_SETUP_WAIT);
+    stopBroker(broker_thread);
+    sleep(BROKER_DELETE_WAIT);
+    delete a;
+}
+
 void Integration_test::testServerParams()
 {
     Arguments* a = new Arguments();
@@ -138,6 +150,7 @@ void Integration_test::testServerParams()
     a->insert(a->end(),"-d");
     a->insert(a->end(),"-v");
 #endif
+    a->insert(a->end(),"-f"+_exe_path + "data/auth_keys.dat");
     a->insert(a->end(),"--max_thread=12");
     a->insert(a->end(),"--idletime=50");
     pthread_t broker_thread = startBroker(a);
@@ -654,7 +667,7 @@ void Integration_test::testPublishBigMessage()
     //CREATING BIG DATA
     vector<u_char> datas;
     Random _r;
-    for(int i=0; i<(3*1024); i++) {
+    for(int i = 0; i < (3*1024); i++) {
         datas.insert(datas.end(), _r.nextChar());
     }
     string data(datas.begin(), datas.end());
@@ -814,9 +827,11 @@ Test *Integration_test::suite()
             new CppUnit::TestCaller<Integration_test>("testHelp",
                     &Integration_test::testHelp));
     suiteOfTests->addTest(
+            new CppUnit::TestCaller<Integration_test>("testVersion",
+                    &Integration_test::testVersion));
+    suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testServerParams",
                     &Integration_test::testServerParams));
-
     suiteOfTests->addTest(
             new CppUnit::TestCaller<Integration_test>("testDebugSettings",
                     &Integration_test::testDebugSettings));
