@@ -55,8 +55,8 @@ Net::TCPServerConnection* TCPConnectionFactory::createConnection(
 
 BrokerApplication::BrokerApplication() :
         debugTag(""), m_helpRequested(false), m_version(false), _debug_mode(false),
-        logger(Logger::get("Tentacool")), port(10000), num_threads(20),
-        queuelen(46), idletime(100), _data_mode(false), _stdout_logging(false),
+        logger(Logger::get("Tentacool")), port(10000), num_threads(0),
+        queuelen(64), idletime(100), _data_mode(false), _stdout_logging(false),
         _filename_spec(false), _exe_path("./"), _log_file("tentacool.log"),
         _filename("auth_keys.dat"), _mongo_ip("127.0.0.1"), _mongo_port("27017"),
         _mongo_db("hpfeeds"), _mongo_collection("auth_key"), _data_manager(NULL)
@@ -212,10 +212,12 @@ void BrokerApplication::defineOptions(Poco::Util::OptionSet& options)
 
     options.addOption(
     Poco::Util::Option("max_thread", "max_th", "define the maximum number of "
-            "simultaneous threads available. The default value is 10")
+            "simultaneous threads available. The default value is 0 -> dynamic "
+            " thread pool automatically adjusted depending on the number of "
+            " connections waiting in the queue")
         .required(false)
         .argument("<Max threads>")
-        .validator(new Util::IntValidator(10, 64))
+        .validator(new Util::IntValidator(0, 64))
         .callback(Poco::Util::OptionCallback<BrokerApplication>
             (this, &BrokerApplication::handleServerParams)));
 
@@ -388,12 +390,16 @@ int BrokerApplication::main(const std::vector<std::string>& args)
             logger.information("Tentacool server socket in listening.");
             // Configure some server parameters.
             Net::TCPServerParams* pParams = new Net::TCPServerParams();
-            logger.information("Setting max threads number: " +
-                NumberFormatter::format(num_threads));
-            pParams->setMaxThreads(num_threads);
+
+            if(num_threads > 0) pParams->setMaxThreads(num_threads);        
+            logger.information("Setting max threads number (dynamic if 0): " +
+                NumberFormatter::format(pParams->getMaxThreads()));
+
             pParams->setMaxQueued(queuelen);
-            logger.information("Setting idle time: " + NumberFormatter::format(idletime));
-            pParams->setThreadIdleTime(idletime);
+
+            pParams->setThreadIdleTime(Timespan(idletime, 0));
+            logger.information("Setting idle time: " +
+                NumberFormatter::format(pParams->getThreadIdleTime().totalSeconds()));
 
             Net::TCPServer server( new TCPConnectionFactory(_data_manager), svs, pParams);
             server.start();

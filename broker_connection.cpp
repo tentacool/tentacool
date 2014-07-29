@@ -194,7 +194,7 @@ void BrokerConnection::run()
                     }
                     case OP_PUBLISH: {
                         how_much_read = 5 + 1 + 1;
-                        //_logger.debug("I've got a publish...");
+                        _logger.debug("I've got a publish...");
                         try {
                             // Get the name
                             string s_name(
