@@ -395,6 +395,9 @@ int BrokerApplication::main(const std::vector<std::string>& args)
             logger.information("Setting max threads number (dynamic if 0): " +
                 NumberFormatter::format(pParams->getMaxThreads()));
 
+            //Increas the deafult thread capacity
+            ThreadPool::defaultPool().addCapacity(num_threads);
+
             pParams->setMaxQueued(queuelen);
 
             pParams->setThreadIdleTime(Timespan(idletime, 0));
@@ -411,6 +414,9 @@ int BrokerApplication::main(const std::vector<std::string>& args)
             waitForTerminationRequest();
 
             server.stop();
+
+            logger.information("Max concurrent Conns: " +
+                NumberFormatter::format(server.maxConcurrentConnections()));
 
             BrokerConnection::isStopped = true;
 

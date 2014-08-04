@@ -246,7 +246,7 @@ void BrokerConnection::run()
                         } catch(Poco::Exception& e) {
                             _logger.error("ERROR: " + e.displayText());
                             how_much_read = 0;
-                            //isOpen = false; ??
+                            isOpen = false;
                         }
                         break;
                     }
