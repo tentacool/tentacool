@@ -56,7 +56,7 @@ void BrokerConnection::run()
     bool isOpen = true;
     Poco::Timespan timeOut(10, 0); //sec, usec
     uint32_t how_much_read;
-    bool socket_status;
+    bool socket_status = false;
 
     // Start the authentication phase
     hpf_msg msg= hpf_info(_auth.genNonce(), Broker_name);
@@ -73,8 +73,8 @@ void BrokerConnection::run()
             socket_status = _sock.poll(timeOut,Poco::Net::Socket::SELECT_READ);
         } catch(Poco::Exception& exc) {
             _logger.error("Poll error: " + exc.displayText());
-            isOpen = false;
-            break;
+            //isOpen = false;
+            //break;
         }
 
         if (socket_status) {
@@ -264,7 +264,7 @@ void BrokerConnection::run()
                      _logger.error("Unhandled state: " + _state);
                      break;
             }
-        }
+        } //if status
     }
 }
 

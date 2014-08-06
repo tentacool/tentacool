@@ -214,16 +214,26 @@ void BrokerApplication::defineOptions(Poco::Util::OptionSet& options)
     Poco::Util::Option("max_thread", "max_th", "define the maximum number of "
             "simultaneous threads available. The default value is 0 -> dynamic "
             " thread pool automatically adjusted depending on the number of "
-            " connections waiting in the queue")
+            " connections waiting in the queue. The default value is 0.") 
         .required(false)
         .argument("<Max threads>")
-        .validator(new Util::IntValidator(0, 64))
+        .validator(new Util::IntValidator(10, 10000))
+        .callback(Poco::Util::OptionCallback<BrokerApplication>
+            (this, &BrokerApplication::handleServerParams)));
+
+    options.addOption(
+    Poco::Util::Option("queuelen", "queuelen", "define the length of the queue "
+            " where are put the incoming connections before assign a thread to "
+            " them. The default value is 64")
+        .required(false)
+        .argument("<Queue length>")
+        .validator(new Util::IntValidator(10, 10000))
         .callback(Poco::Util::OptionCallback<BrokerApplication>
             (this, &BrokerApplication::handleServerParams)));
 
     options.addOption(
     Poco::Util::Option("idletime", "idle", "define the maximum idle time for a "
-            "thread before it is terminated. The default value is 100")
+            "thread before it is terminated. The default value is 100.")
         .required(false)
         .argument("<Idle time>")
         .validator(new Util::IntValidator(1, 200))
@@ -342,6 +352,8 @@ void BrokerApplication::handleServerParams(const std::string& name,
 {
     if (name == "max_thread") {
         num_threads = NumberParser::parseUnsigned(value);
+    } else if (name == "queuelen") {
+        queuelen = NumberParser::parseUnsigned(value);
     } else if (name == "idletime") {
         idletime = NumberParser::parseUnsigned(value);
     }
@@ -391,14 +403,18 @@ int BrokerApplication::main(const std::vector<std::string>& args)
             // Configure some server parameters.
             Net::TCPServerParams* pParams = new Net::TCPServerParams();
 
-            if(num_threads > 0) pParams->setMaxThreads(num_threads);        
+            if(num_threads > 0) {
+                pParams->setMaxThreads(num_threads);
+                //Increase the deafult thread capacity
+                ThreadPool::defaultPool().addCapacity(num_threads);
+            }
+   
             logger.information("Setting max threads number (dynamic if 0): " +
                 NumberFormatter::format(pParams->getMaxThreads()));
 
-            //Increas the deafult thread capacity
-            ThreadPool::defaultPool().addCapacity(num_threads);
-
             pParams->setMaxQueued(queuelen);
+            logger.information("Setting Queue Max Length: " +
+                NumberFormatter::format(pParams->getMaxQueued()));
 
             pParams->setThreadIdleTime(Timespan(idletime, 0));
             logger.information("Setting idle time: " +
