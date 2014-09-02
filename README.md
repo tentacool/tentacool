@@ -1,4 +1,4 @@
-# Tentacool
+![tentacool](img/tentacool-small.png)
 
 [![Build Status](https://travis-ci.org/tentacool/tentacool.svg?branch=devel-aldo)](https://travis-ci.org/abes975/tentacool)
 
