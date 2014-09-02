@@ -1,4 +1,4 @@
-AC_INIT([tentacool], [0.1.0], [lomato@gmail.com, abes975@gmail.com], [tentacool], [http://github.com/abes975/tentacool])
+AC_INIT([tentacool], [0.1.0], [lomato@gmail.com, abes975@gmail.com], [tentacool], [http://github.com/tentacool/tentacool])
 AC_PREREQ([2.59])
 AM_INIT_AUTOMAKE([1.10 no-define foreign])
 AC_CONFIG_HEADERS([config.h])
