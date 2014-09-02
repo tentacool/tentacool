@@ -5,8 +5,8 @@
 This is a C++ implementation of a HpFeedBroker.
 
 It offers to ways to fetch user authentication datas:
- - File. See [details](docs/file.md)
- - MongoDB
+ - File. See [details](docs/file.md).
+ - MongoDB.
 
 ## Dependancies
 
@@ -45,4 +45,4 @@ make
 
 ## Performance
 
-Have a look at [this document](docs/performance.md)
+Have a look at [this document](docs/performance.md).
