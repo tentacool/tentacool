@@ -1,6 +1,7 @@
 # Tentacool
 
 [![Build Status](https://travis-ci.org/tentacool/tentacool.svg?branch=devel-aldo)](https://travis-ci.org/abes975/tentacool)
+[![Coverage Status](https://coveralls.io/repos/tentacool/tentacool/badge.png)](https://coveralls.io/r/tentacool/tentacool)
 
 This is a C++ implementation of a HpFeedBroker.
 
