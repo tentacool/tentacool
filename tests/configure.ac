@@ -6,7 +6,8 @@ AC_PROG_CXX
 AM_PROG_CC_C_O
 AC_CONFIG_FILES([Makefile])
 
-
+AC_ARG_ENABLE(gcov,
+    AC_HELP_STRING([--enable-gcov],[Enable gcov code coverage (requires GCC)]), [CXXFLAGS="-g --coverage"])
 
 #check pthread library
 AC_CHECK_LIB([pthread],[pthread_create], [], AC_MSG_ERROR([unable to find the pthread_create() function]))
@@ -31,7 +32,7 @@ AC_CHECK_LIB([PocoNet],[main],[],AC_MSG_ERROR([unable to find PocoNet]))
 AC_CHECK_LIB([PocoFoundation],[main],[],AC_MSG_ERROR([unable to find PocoFoundation]))
 AC_CHECK_LIB([PocoUtil],[main],[],AC_MSG_ERROR([unable to find PocoUtil]))
 
-#check if you want mongodb support 
+#check if you want mongodb support
 AC_ARG_WITH(mongoclient,
   AS_HELP_STRING([--with-mongoclient=DIR],[location of mongoclient]),
 [
@@ -39,7 +40,7 @@ AC_ARG_WITH(mongoclient,
 	        CPPFLAGS="$CPPFLAGS -I${withval}/include/mongo/client"
 	        LDFLAGS="$LDFLAGS -L${withval}/lib"
         else
-                #no path 
+                #no path
 	        CPPFLAGS="$CPPFLAGS -I/usr/include/mongo/client"
 	        LDFLAGS="$LDFLAGS -L/usr/lib"
         fi
@@ -84,7 +85,7 @@ if test "x${with_mongoclient}" != xno; then
 
 
         AC_CHECK_LIB([mongoclient],[main],[],AC_MSG_ERROR([unable to find MongoClient]))
-        
+
         #Macro I check in the code
         AC_DEFINE(__WITH_MONGO__,1,[MongoDB support])
 fi

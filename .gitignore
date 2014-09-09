@@ -18,6 +18,9 @@ tentacool
 
 #Code Coverage Script dir
 tests/code_coverage
+*.gcov
+*.gcda
+*.gcno
 
 #Code Coverage measurement database and the execution report
 *.csmes
