@@ -70,6 +70,9 @@ if test "x${with_mongoclient}" != xno; then
                 ])
         ])
 
+		AC_CHECK_LIB([ssl],[main],[],AC_MSG_ERROR([unable to find SSL]))
+		AC_CHECK_LIB([crypto],[main],[],AC_MSG_ERROR([unable to find Crypto]))
+
 #        AC_MSG_CHECKING(for MongoClient headers)
 #	        AC_TRY_COMPILE([
 #		        #include "/mongo/client/dbclient.h"
