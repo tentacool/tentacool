@@ -403,6 +403,9 @@ int BrokerApplication::main(const std::vector<std::string>& args)
             // Configure some server parameters.
             Net::TCPServerParams* pParams = new Net::TCPServerParams();
 
+            // Set the default stack size 
+            ThreadPool::defaultPool().setStackSize(4096);
+
             if(num_threads > 0) {
                 pParams->setMaxThreads(num_threads);
                 //Increase the deafult thread capacity
