@@ -4,11 +4,11 @@
 
 This is a C++ implementation of a HpFeedBroker.
 
-It offers two ways to fetch user authentication datas:
+It offers two ways to fetch user authentication data:
  - File. See [details](docs/file.md).
  - MongoDB.
 
-## Dependancies
+## Dependencies
 
 Tentacool depends on `libpoco` for the code and from `libcppunit` for the tests.
 To install them (under Ubuntu)
@@ -35,7 +35,7 @@ autoreconf -i
 make
 ```
 
-The mongoDB feature is optional, in order to obtain it use the follow instructions:
+The mongoDB feature is optional, in order to obtain it use the following instructions:
 
 ```
 autoreconf -i
